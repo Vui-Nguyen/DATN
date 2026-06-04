@@ -1,0 +1,67 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.ProductDto>
+
+@{
+    ViewData["Title"] = "Trang chủ Sản phẩm";
+    var categories = ViewBag.Categories as IEnumerable<DATN.Models.DTOs.CategoryDto>;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar Danh mục -->
+        <div class="col-md-3">
+            <div class="list-group shadow-sm mb-4">
+                <div class="list-group-item bg-dark text-white font-weight-bold">DANH MỤC SẢN PHẨM</div>
+                @if (categories != null)
+                {
+                    @foreach (var cat in categories)
+                    {
+                        <a asp-action="ProductsByCategory" asp-route-categoryId="@cat.CategoryID" class="list-group-item list-group-item-action">
+                            @cat.CategoryName
+                        </a>
+                    }
+                }
+            </div>
+
+            <!-- Thanh tìm kiếm -->
+            <form asp-action="Search" method="get" class="d-flex">
+                <input type="text" name="keyword" class="form-control me-2" placeholder="Tìm sản phẩm..." value="@ViewBag.Keyword" />
+                <button type="submit" class="btn btn-primary">Tìm</button>
+            </form>
+        </div>
+
+        <!-- Lưới sản phẩm -->
+        <div class="col-md-9">
+            <h3 class="mb-4">Sản phẩm mới nhất</h3>
+            <div class="row">
+                @foreach (var prod in Model.Items)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <img src="@prod.ImageUrl" class="card-img-top" alt="@prod.ProductName" style="height: 200px; object-fit: cover;">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title text-truncate">@prod.ProductName</h5>
+                                <p class="card-text text-danger font-weight-bold">@prod.Price.ToString("N0") đ</p>
+                                <a asp-action="Details" asp-route-id="@prod.ProductID" class="btn btn-outline-primary mt-auto w-100">Xem chi tiết</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Thanh phân trang -->
+            @if (Model.TotalPages > 1)
+            {
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                <a class="page-line page-link" asp-action="Index" asp-route-page="@i">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>

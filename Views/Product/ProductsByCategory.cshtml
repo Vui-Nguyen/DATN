@@ -1,0 +1,53 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.ProductDto>
+
+@{
+    var category = ViewBag.Category as DATN.Models.DTOs.CategoryDto;
+    ViewData["Title"] = category != null ? "Danh mục: " + category.CategoryName : "Danh mục sản phẩm";
+}
+
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Quay lại</a>
+        <h3 class="mb-0">Sản phẩm thuộc danh mục: <span class="text-primary">@(category?.CategoryName ?? "")</span></h3>
+    </div>
+
+    @if (Model == null || !Model.Items.Any())
+    {
+        <div class="alert alert-info text-center py-5 shadow-sm">
+            <h5>Hiện tại chưa có sản phẩm nào thuộc danh mục này!</h5>
+            <a asp-action="Index" class="btn btn-primary mt-3">Xem các sản phẩm khác</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var prod in Model.Items)
+            {
+                <div class="col-md-3 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@prod.ImageUrl" class="card-img-top" alt="@prod.ProductName" style="height: 200px; object-fit: cover;">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title text-truncate">@prod.ProductName</h5>
+                            <p class="card-text text-danger font-weight-bold">@prod.Price.ToString("N0") đ</p>
+                            <a asp-action="Details" asp-route-id="@prod.ProductID" class="btn btn-outline-primary mt-auto w-100">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-action="ProductsByCategory" asp-route-categoryId="@category?.CategoryID" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

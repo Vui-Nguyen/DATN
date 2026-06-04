@@ -1,0 +1,62 @@
+﻿@model DATN.Models.DTOs.ProductDetailDto
+
+@{
+    ViewData["Title"] = Model.ProductName;
+}
+
+<div class="container mt-5">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="row">
+        <!-- Khu vực hình ảnh -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <img src="@(Model.Images.FirstOrDefault() ?? "/images/default.jpg")" class="img-fluid w-100" id="mainImage" style="max-height: 400px; object-fit: contain;" />
+                <div class="card-footer d-flex gap-2 overflow-auto">
+                    @foreach (var img in Model.Images)
+                    {
+                        <img src="@img" class="img-thumbnail" style="width: 70px; height: 70px; cursor: pointer;" onclick="document.getElementById('mainImage').src='@img'" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Khu vực thông tin & đặt hàng -->
+        <div class="col-md-6">
+            <h2 class="mb-2">@Model.ProductName</h2>
+            <p class="text-muted mb-3">Danh mục: <strong>@Model.CategoryName</strong> | Thương hiệu: <strong>@Model.BrandName</strong></p>
+            <hr />
+            <p class="my-4">@Model.Description</p>
+            <hr />
+
+            <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Chọn phân loại sản phẩm:</label>
+                    <select name="variantId" class="form-select" required>
+                        <option value="">-- Vui lòng chọn phân loại --</option>
+                        @foreach (var variant in Model.Variants)
+                        {
+                            <option value="@variant.VariantID">@variant.VariantName - (@variant.Price.ToString("N0") đ)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label font-weight-bold">Số lượng đặt mua:</label>
+                    <input type="number" name="quantity" class="form-control" value="1" min="1" style="width: 100px;" />
+                </div>
+
+                <button type="submit" class="btn btn-danger btn-lg w-100 mt-3">THÊM VÀO GIỎ HÀNG</button>
+            </form>
+        </div>
+    </div>
+</div>

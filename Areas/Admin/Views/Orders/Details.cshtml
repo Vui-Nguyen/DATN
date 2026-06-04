@@ -1,0 +1,51 @@
+﻿@model DATN.Models.DTOs.OrderDetailAdminDto
+
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn duyệt";
+    Layout = "_AdminLayout";
+}
+
+<div class="container mt-4" style="max-width: 700px;">
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="card shadow shadow-sm">
+        <div class="card-header bg-dark text-white">
+            <h4>Xử lý đơn đặt hàng số #@Model.OrderID</h4>
+        </div>
+        <div class="card-body">
+            <p>Khách hàng đặt mua: <strong>@Model.CustomerName</strong></p>
+            <p>Thời gian ghi nhận: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>Tổng giá trị thanh toán: <strong class="text-danger text-large">@Model.TotalAmount.ToString("N0") đ</strong></p>
+            <hr />
+
+            <h5 class="mb-3">Thay đổi trạng thái quy trình giao vận:</h5>
+            <div class="d-flex gap-2 mb-3">
+                <form asp-area="Admin" asp-controller="Orders" asp-action="Approve" asp-route-id="@Model.OrderID" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">Xác nhận duyệt đơn (Confirmed)</button>
+                </form>
+            </div>
+
+            <form asp-area="Admin" asp-controller="Orders" asp-action="UpdateStatus" asp-route-id="@Model.OrderID" method="post" class="row g-3 align-items-center">
+                @Html.AntiForgeryToken()
+                <div class="col-auto">
+                    <select name="status" class="form-select" required>
+                        <option value="">-- Cập nhật trạng thái khác --</option>
+                        <option value="Shipping">Đang vận chuyển giao hàng (Shipping)</option>
+                        <option value="Delivered">Đã giao hàng thành công (Delivered)</option>
+                        <option value="Cancelled">Hủy bỏ đơn giao dịch này (Cancelled)</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer">
+            <a asp-action="Index" class="btn btn-sm btn-secondary">Quay lại danh sách đơn hàng</a>
+        </div>
+    </div>
+</div>

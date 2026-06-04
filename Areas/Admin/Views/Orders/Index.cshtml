@@ -1,0 +1,49 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.OrderAdminDto>
+
+@{
+    ViewData["Title"] = "Quản lý đơn hàng";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <h2 class="mb-4">Hệ thống quản lý đơn đặt hàng</h2>
+
+    <div class="mb-3 d-flex gap-2">
+        <a asp-action="Index" asp-route-status="" class="btn btn-outline-dark btn-sm">Tất cả</a>
+        <a asp-action="Index" asp-route-status="Pending" class="btn btn-outline-warning btn-sm">Chờ duyệt</a>
+        <a asp-action="Index" asp-route-status="Confirmed" class="btn btn-outline-primary btn-sm">Đã duyệt</a>
+        <a asp-action="Index" asp-route-status="Cancelled" class="btn btn-outline-danger btn-sm">Đã hủy</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã ĐH</th>
+                        <th>Tên khách hàng mua</th>
+                        <th>Thời gian lập đơn</th>
+                        <th>Giá trị hóa đơn</th>
+                        <th class="text-center">Thao tác xử lý</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Items)
+                    {
+                        <tr>
+                            <td>#@order.OrderID</td>
+                            <td>@order.CustomerName</td>
+                            <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-danger fw-bold">@order.TotalAmount.ToString("N0") đ</td>
+                            <td class="text-center">
+                                <a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderID" class="btn btn-sm btn-outline-primary">
+                                    Duyệt & Xem chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
