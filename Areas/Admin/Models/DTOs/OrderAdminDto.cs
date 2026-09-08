@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DATN.Models.DTOs
+namespace DATN.Areas.Admin.Models.DTOs
 {
     public class OrderAdminDto
     {

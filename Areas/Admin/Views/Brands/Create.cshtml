@@ -1,14 +1,14 @@
-﻿@model DATN.Areas.Admin.Models.ViewModels.CategoryViewModel
+﻿@model DATN.Areas.Admin.Models.ViewModels.BrandViewModel
 
 @{
-    ViewData["Title"] = "Thêm danh mục";
+    ViewData["Title"] = "Thêm thương hiệu";
     Layout = "_AdminLayout";
 }
 
 <div class="container-fluid px-4 mt-4">
     <!-- Khu vực Tiêu đề và Nút quay lại (Đồng bộ với Index và Edit) -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Thêm danh mục mới</h2>
+        <h2>Thêm thương hiệu mới</h2>
         <a asp-action="Index" class="btn btn-secondary">
             <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách
         </a>
@@ -17,13 +17,13 @@
     <!-- Khu vực Form nhập liệu -->
     <div class="card shadow-sm" style="max-width: 600px;">
         <div class="card-body">
-            <form asp-area="Admin" asp-controller="Categories" asp-action="Create" method="post">
+            <form asp-area="Admin" asp-controller="Brands" asp-action="Create" method="post">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
-                    <label asp-for="CategoryName" class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
-                    <input asp-for="CategoryName" class="form-control" placeholder="Nhập tên danh mục..." />
-                    <span asp-validation-for="CategoryName" class="text-danger"></span>
+                    <label asp-for="BrandName" class="form-label fw-bold">Tên thương hiệu <span class="text-danger">*</span></label>
+                    <input asp-for="BrandName" class="form-control" placeholder="Nhập tên thương hiệu..." />
+                    <span asp-validation-for="BrandName" class="text-danger"></span>
                 </div>
 
                 <div class="mt-4">

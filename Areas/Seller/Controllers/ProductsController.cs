@@ -2,12 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
+using DATN.Areas.Seller.Models.ViewModels;
 
-namespace DATN.Areas.Admin.Controllers
+namespace DATN.Areas.Seller.Controllers
 {
-    [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Area("Seller")]
+    [Authorize(Roles = "Seller")]
     public class ProductsController : Controller
     {
         private readonly IProductService _productService;

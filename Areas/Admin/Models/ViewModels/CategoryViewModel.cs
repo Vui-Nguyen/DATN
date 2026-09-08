@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace DATN.Models.ViewModels
+namespace DATN.Areas.Admin.Models.ViewModels
 {
     public class CategoryViewModel
     {

@@ -6,8 +6,9 @@ using System;
 using DATN.Models.Entities;
 using DATN.Models.DTOs;
 using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
 using DATN.Data;
+using DATN.Areas.Admin.Models.DTOs;
+using DATN.Areas.Seller.Models.ViewModels;
 
 namespace DATN.Services.Implementations
 {

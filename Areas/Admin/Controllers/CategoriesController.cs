@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
+using DATN.Areas.Admin.Models.ViewModels;
 
 namespace DATN.Areas.Admin.Controllers
 {

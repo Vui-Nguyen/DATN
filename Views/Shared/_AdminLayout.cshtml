@@ -11,14 +11,15 @@
     <style>
         body {
             overflow-x: hidden;
-            background-color: #f8f9fa;
+            background-color: #f4f6f9; /* Màu nền sáng và dịu hơn một chút */
         }
-        /* Cấu hình thanh Sidebar cố định bên trái */
+
+        /* Cấu hình thanh Sidebar */
         #sidebar-wrapper {
             min-height: 100vh;
             width: 250px;
             transition: all 0.25s ease-out;
-            background-color: #212529;
+            background-color: #212529; /* Nền tối */
         }
 
             #sidebar-wrapper .sidebar-heading {
@@ -26,26 +27,31 @@
                 font-size: 1.2rem;
                 font-weight: bold;
                 background-color: #1a1d20;
+                color: #ffffff; /* Sửa thành màu trắng cho thanh lịch */
             }
 
             #sidebar-wrapper .list-group-item {
                 border: none;
-                padding: 0.75rem 1.5rem;
-                background-color: #212529;
-                color: #rgba(255,255,255,0.75);
+                padding: 0.85rem 1.5rem;
+                background-color: transparent; /* Giúp hover mượt hơn */
+                color: rgba(255, 255, 255, 0.7); /* SỬA LỖI CÚ PHÁP TẠI ĐÂY */
+                font-size: 0.95rem;
             }
 
                 #sidebar-wrapper .list-group-item:hover {
-                    background-color: #343a40;
-                    color: #fff;
+                    background-color: rgba(255, 255, 255, 0.05); /* Hover nền sáng mờ thay vì xám đục */
+                    color: #ffffff;
                 }
 
                 #sidebar-wrapper .list-group-item.active-menu {
                     background-color: #0d6efd;
-                    color: #fff;
-                    font-weight: bold;
+                    color: #ffffff;
+                    font-weight: 500;
+                    border-radius: 0.25rem;
+                    margin: 0.2rem 0.5rem; /* Bo góc và cách lề một chút nhìn sẽ hiện đại hơn */
                 }
-        /* Khu vực nội dung chính bên phải */
+
+        /* Khu vực nội dung */
         #page-content-wrapper {
             min-width: 0;
             width: 100%;
@@ -53,7 +59,7 @@
 
         .admin-navbar {
             background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            box-shadow: 0 1px 5px rgba(0,0,0,0.05); /* Bóng đổ nhẹ nhàng hơn */
         }
     </style>
 </head>
@@ -69,10 +75,6 @@
                 </a>
                 <hr class="dropdown-divider bg-secondary mx-3">
 
-                <a asp-area="Admin" asp-controller="Products" asp-action="Index"
-                   class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Products" ? "active-menu" : "")">
-                    <i class="bi bi-box-seam me-2"></i> Quản lý Sản phẩm
-                </a>
 
                 <a asp-area="Admin" asp-controller="Categories" asp-action="Index"
                    class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Categories" ? "active-menu" : "")">
@@ -82,11 +84,6 @@
                 <a asp-area="Admin" asp-controller="Brands" asp-action="Index"
                    class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Brands" ? "active-menu" : "")">
                     <i class="bi bi-award me-2"></i> Quản lý Thương hiệu
-                </a>
-
-                <a asp-area="Admin" asp-controller="Orders" asp-action="Index"
-                   class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" ? "active-menu" : "")">
-                    <i class="bi bi-receipt me-2"></i> Quản lý Đơn hàng
                 </a>
 
                 <a asp-area="Admin" asp-controller="Users" asp-action="Index"

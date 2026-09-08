@@ -4,8 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using DATN.Models.Entities;
 using DATN.Models.DTOs;
 using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
 using DATN.Data;
+using DATN.Areas.Admin.Models.ViewModels;
 
 namespace YourApp.Services.Implementations
 {

@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using DATN.Models.DTOs;
-using DATN.Models.ViewModels;
+using DATN.Areas.Admin.Models.DTOs;
+using DATN.Areas.Seller.Models.ViewModels;
 
 namespace DATN.Services.Interfaces
 {

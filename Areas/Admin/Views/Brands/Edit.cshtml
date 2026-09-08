@@ -1,0 +1,47 @@
+﻿@model DATN.Areas.Admin.Models.ViewModels.BrandViewModel
+
+@{
+    ViewData["Title"] = "Cập nhật thương hiệu";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Sửa thương hiệu sản phẩm</h2>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left-circle"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    <div class="card shadow-sm" style="max-width: 600px;">
+        <div class="card-body">
+            <!-- Form gửi dữ liệu cập nhật. Lưu ý: asp-route-id lấy ID từ URL hiện tại truyền vào hàm POST -->
+            <form asp-area="Admin" asp-controller="Brands" asp-action="Edit" asp-route-id="@ViewContext.RouteData.Values["id"]" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Hiển thị lỗi tổng thể nếu có -->
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="BrandName" class="form-label fw-bold">Tên thương hiệu <span class="text-danger">*</span></label>
+                    <input asp-for="BrandName" class="form-control" placeholder="Nhập tên thương hiệu..." />
+                    <span asp-validation-for="BrandName" class="text-danger"></span>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-warning fw-bold text-dark">
+                        <i class="bi bi-save"></i> Cập nhật thay đổi
+                    </button>
+                    <a asp-action="Index" class="btn btn-light border">Hủy</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Script này giúp kiểm tra lỗi (để trống, sai định dạng...) ngay trên trình duyệt mà không cần load lại trang -->
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

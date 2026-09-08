@@ -1,4 +1,4 @@
-namespace DATN.Models.Entities
+namespace DATN.Models.ViewModels
 {
     public class ErrorViewModel
     {

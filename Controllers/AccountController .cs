@@ -85,7 +85,7 @@ namespace DATN.Controllers
 
             // Redirect based on role
             if (user.RoleName == "Admin")
-                return RedirectToAction("Index", "Products", new { area = "Admin" });
+                return RedirectToAction("Index", "Categories", new { area = "Admin" });
 
             return RedirectToAction("Index", "Product");
         }

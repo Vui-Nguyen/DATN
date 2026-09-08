@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using DATN.Services.Interfaces;
 using DATN.Models.ViewModels;
 
-namespace DATN.Areas.Admin.Controllers
+namespace DATN.Areas.Seller.Controllers
 {
-    [Area("Admin")]
-    [Authorize(Roles = "Admin")]
+    [Area("Seller")]
+    [Authorize(Roles = "Seller")]
     public class OrdersController : Controller
     {
         private readonly IOrderService _orderService;

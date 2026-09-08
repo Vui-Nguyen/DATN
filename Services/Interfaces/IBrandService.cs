@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Collections.Generic;
 using DATN.Models.DTOs;
-using DATN.Models.ViewModels;
+using DATN.Areas.Admin.Models.ViewModels;
 
 namespace DATN.Services.Interfaces
 {
