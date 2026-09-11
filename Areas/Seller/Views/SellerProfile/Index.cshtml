@@ -1,0 +1,127 @@
+﻿@model DATN.Areas.Seller.Models.SellerProfileViewModel
+
+@{
+    ViewData["Title"] = "Quản lý hồ sơ cửa hàng";
+    Layout = "_SellerLayout";
+}
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Hồ sơ cửa hàng</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-area="Seller" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+        <li class="breadcrumb-item active">Hồ sơ</li>
+    </ol>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-user-edit me-1"></i>
+            Cập nhật thông tin định danh và thanh toán
+        </div>
+        <div class="card-body">
+            <form asp-action="Update" asp-controller="SellerProfile" asp-area="Seller" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="UserId" />
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="BankAccountNumber" class="form-label">Số tài khoản ngân hàng</label>
+                        <input asp-for="BankAccountNumber" class="form-control" />
+                        <span asp-validation-for="BankAccountNumber" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="BankName" class="form-label">Tên ngân hàng</label>
+                        <input asp-for="BankName" class="form-control" />
+                        <span asp-validation-for="BankName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="IdentityCardNumber" class="form-label">Số CCCD</label>
+                    <input asp-for="IdentityCardNumber" class="form-control" />
+                    <span asp-validation-for="IdentityCardNumber" class="text-danger"></span>
+                </div>
+
+                <div class="row mb-3">
+                    <!-- Ảnh chân dung -->
+                    <div class="col-md-4">
+                        <label class="form-label">Ảnh chân dung</label>
+                        @if (!string.IsNullOrEmpty(Model.PortraitImage))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.PortraitImage" alt="Portrait" class="img-thumbnail" style="max-height: 150px;" />
+                            </div>
+                        }
+                        <input asp-for="PortraitImageFile" type="file" class="form-control" accept="image/*" />
+                    </div>
+
+                    <!-- Mặt trước CCCD -->
+                    <div class="col-md-4">
+                        <label class="form-label">Ảnh mặt trước CCCD</label>
+                        @if (!string.IsNullOrEmpty(Model.FrontIdentityImage))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.FrontIdentityImage" alt="Front ID" class="img-thumbnail" style="max-height: 150px;" />
+                            </div>
+                        }
+                        <input asp-for="FrontIdentityImageFile" type="file" class="form-control" accept="image/*" />
+                    </div>
+
+                    <!-- Mặt sau CCCD -->
+                    <div class="col-md-4">
+                        <label class="form-label">Ảnh mặt sau CCCD</label>
+                        @if (!string.IsNullOrEmpty(Model.BackIdentityImage))
+                        {
+                            <div class="mb-2">
+                                <img src="@Model.BackIdentityImage" alt="Back ID" class="img-thumbnail" style="max-height: 150px;" />
+                            </div>
+                        }
+                        <input asp-for="BackIdentityImageFile" type="file" class="form-control" accept="image/*" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Trạng thái duyệt:</label>
+                    <div>
+                        @if (Model.Status == 0)
+                        {
+                            <span class="badge bg-warning text-dark">Chờ duyệt</span>
+                        }
+                        else if (Model.Status == 1)
+                        {
+                            <span class="badge bg-success">Đã duyệt</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Bị từ chối</span>
+                        }
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -16,10 +16,10 @@ namespace DATN.Services.Interfaces
         Task<PagedResult<ProductDto>> GetByCategoryAsync(int categoryId, int page, int pageSize);
 
         // Admin-side Methods
-        Task<PagedResult<ProductAdminDto>> GetAllAdminAsync(int page);
+        Task<PagedResult<ProductDto>> GetAllSellerAsync(int page);
         Task<ProductViewModel> GetForEditAsync(int id);
-        Task<ServiceResult> CreateAsync(ProductViewModel model, List<IFormFile>? images, string webRootPath);
-        Task<ServiceResult> UpdateAsync(int id, ProductViewModel model, List<IFormFile>? images, string webRootPath);
+        Task<ServiceResult> CreateAsync(ProductViewModel model, List<IFormFile>? images);
+        Task<ServiceResult> UpdateAsync(int id, ProductViewModel model, List<IFormFile>? images);
         Task<ServiceResult> DeleteAsync(int id);
     }
 }

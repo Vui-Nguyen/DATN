@@ -1,0 +1,214 @@
+﻿@model DATN.Areas.Seller.Models.ViewModels.ProductViewModel
+
+@{
+    ViewData["Title"] = "Chỉnh sửa sản phẩm";
+    Layout = "_SellerLayout";
+}
+
+<div class="container mt-4" style="max-width: 900px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h4>Chỉnh sửa thông tin sản phẩm</h4>
+        </div>
+        <div class="card-body">
+            <form asp-area="Seller" asp-controller="Products" asp-action="Edit" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="ProductName" class="form-label">Tên sản phẩm</label>
+                    <input asp-for="ProductName" class="form-control" />
+                    <span asp-validation-for="ProductName" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="CategoryID" class="form-label">Chọn danh mục sản phẩm</label>
+                        <select asp-for="CategoryID" class="form-select" asp-items="ViewBag.Categories">
+                            <option value="">-- Vui lòng chọn --</option>
+                        </select>
+                        <span asp-validation-for="CategoryID" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="BrandID" class="form-label">Chọn thương hiệu phân phối</label>
+                        <select asp-for="BrandID" class="form-select" asp-items="ViewBag.Brands">
+                            <option value="">-- Vui lòng chọn --</option>
+                        </select>
+                        <span asp-validation-for="BrandID" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Mô tả thông số chi tiết</label>
+                    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                </div>
+
+                <!-- PHẦN QUẢN LÝ DANH SÁCH PHÂN LOẠI (VARIANTS) -->
+                <hr />
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Danh sách phân loại sản phẩm (Màu sắc, Size,...)</label>
+                        <button type="button" class="btn btn-sm btn-primary" id="add-variant-btn">+ Thêm phân loại</button>
+                    </div>
+
+                    <div id="variants-container">
+                        @if (Model.Variants != null && Model.Variants.Count > 0)
+                        {
+                            for (int i = 0; i < Model.Variants.Count; i++)
+                            {
+                                <div class="variant-item border p-3 mb-2 rounded bg-light">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-4 mb-2 mb-md-0">
+                                            <label class="form-label small">Tên phân loại</label>
+                                            <input type="text" name="Variants[@i].VariantName" value="@Model.Variants[i].VariantName" class="form-control" placeholder="Ví dụ: Đỏ - Size L" required />
+                                        </div>
+                                        <div class="col-md-3 mb-2 mb-md-0">
+                                            <label class="form-label small">Giá bán (VNĐ)</label>
+                                            <input type="number" step="1000" name="Variants[@i].Price" value="@Model.Variants[i].Price" class="form-control" placeholder="Giá" required />
+                                        </div>
+                                        <div class="col-md-3 mb-2 mb-md-0">
+                                            <label class="form-label small">Tồn kho</label>
+                                            <input type="number" name="Variants[@i].Stock" value="@Model.Variants[i].Stock" class="form-control" placeholder="Số lượng" required />
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <button type="button" class="btn btn-danger btn-sm remove-variant-btn mt-4">Xóa</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <hr />
+                <!-- PHẦN HIỂN THỊ ẢNH HIỆN TẠI -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Hình ảnh sản phẩm hiện tại</label>
+                    <div class="row g-2" id="current-images-container">
+                        @if (Model.Images != null && Model.Images.Count > 0)
+                        {
+                            for (int i = 0; i < Model.Images.Count; i++)
+                            {
+                                <div class="col-md-3 position-relative image-item">
+                                    <div class="card p-1 shadow-sm">
+                                        <!-- Hiển thị hình ảnh trực tiếp -->
+                                        <img src="@Model.Images[i]" alt="Product Image" class="card-img-top" style="height: 120px; object-fit: cover;" />
+
+                                        <!-- Input ẩn để giữ lại các đường dẫn ảnh cũ nếu không muốn xóa -->
+                                        <input type="hidden" name="ExistingImages[@i]" value="@Model.Images[i]" />
+
+                                        <div class="card-body p-2 text-center">
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100 remove-existing-image">Xóa ảnh này</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted">Chưa có hình ảnh nào cho sản phẩm này.</p>
+                        }
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Tải lên bổ sung hình ảnh sản phẩm</label>
+                    <input type="file" name="images" class="form-control" multiple accept="image/*" />
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning px-4">Lưu thay đổi</button>
+                    <a asp-action="Index" class="btn btn-secondary">Hủy bỏ</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let variantIndex = @Model.Variants?.Count ?? 0;
+                // Xử lý nút xóa ảnh hiện có trên giao diện
+        document.getElementById('current-images-container').addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('remove-existing-image')) {
+                const imageCard = e.target.closest('.image-item');
+                imageCard.remove(); // Xóa khỏi giao diện
+                reindexExistingImages();
+            }
+        });
+
+        // Cập nhật lại index cho ExistingImages để gửi về Controller chính xác
+        function reindexExistingImages() {
+            const items = document.querySelectorAll('#current-images-container .image-item');
+            items.forEach((item, index) => {
+                const input = item.querySelector('input[type="hidden"]');
+                if (input) {
+                    input.name = `ExistingImages[${index}]`;
+                }
+            });
+        }
+        // Xử lý thêm dòng phân loại mới
+        document.getElementById('add-variant-btn').addEventListener('click', function () {
+            const container = document.getElementById('variants-container');
+
+            const html = `
+                <div class="variant-item border p-3 mb-2 rounded bg-light">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <label class="form-label small">Tên phân loại</label>
+                            <input type="text" name="Variants[${variantIndex}].VariantName" class="form-control" placeholder="Ví dụ: Đỏ - Size L" required />
+                        </div>
+                        <div class="col-md-3 mb-2 mb-md-0">
+                            <label class="form-label small">Giá bán (VNĐ)</label>
+                            <input type="number" step="1000" name="Variants[${variantIndex}].Price" class="form-control" placeholder="Giá" required />
+                        </div>
+                        <div class="col-md-3 mb-2 mb-md-0">
+                            <label class="form-label small">Tồn kho</label>
+                            <input type="number" name="Variants[${variantIndex}].Stock" class="form-control" placeholder="Số lượng" required />
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-variant-btn mt-4">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+            variantIndex++;
+            updateRemoveButtons();
+        });
+
+        // Xử lý xóa dòng phân loại
+        document.getElementById('variants-container').addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('remove-variant-btn')) {
+                e.target.closest('.variant-item').remove();
+                reindexVariants();
+                updateRemoveButtons();
+            }
+        });
+
+        // Sắp xếp lại index để Model Binding nhận diện đúng mảng Variants
+        function reindexVariants() {
+            const items = document.querySelectorAll('.variant-item');
+            variantIndex = items.length;
+            items.forEach((item, index) => {
+                item.querySelector('input[name*="VariantName"]').name = `Variants[${index}].VariantName`;
+                item.querySelector('input[name*="Price"]').name = `Variants[${index}].Price`;
+                item.querySelector('input[name*="Stock"]').name = `Variants[${index}].Stock`;
+            });
+        }
+
+        // Ẩn nút xóa nếu chỉ còn đúng 1 dòng phân loại
+        function updateRemoveButtons() {
+            const items = document.querySelectorAll('.variant-item');
+            const removeButtons = document.querySelectorAll('.remove-variant-btn');
+            removeButtons.forEach(btn => {
+                if (items.length > 1) {
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        // Chạy kiểm tra ẩn/hiện nút xóa ngay khi load xong view
+        updateRemoveButtons();
+    </script>
+}

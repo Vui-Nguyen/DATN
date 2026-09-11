@@ -27,10 +27,11 @@ namespace DATN.Areas.Seller.Controllers
             _env = env;
         }
 
+
         // GET: /Admin/Products/Index
         public async Task<IActionResult> Index(int page = 1)
         {
-            var products = await _productService.GetAllAdminAsync(page);
+            var products = await _productService.GetAllSellerAsync(page);
             return View(products);
         }
 
@@ -60,7 +61,7 @@ namespace DATN.Areas.Seller.Controllers
                 return View(model);
             }
 
-            var result = await _productService.CreateAsync(model, images, _env.WebRootPath);
+            var result = await _productService.CreateAsync( model, images);
             if (!result.Success)
             {
                 ModelState.AddModelError("", result.Message);
@@ -93,7 +94,7 @@ namespace DATN.Areas.Seller.Controllers
                 return View(model);
             }
 
-            var result = await _productService.UpdateAsync(id, model, images, _env.WebRootPath);
+            var result = await _productService.UpdateAsync(id, model, images);
             if (!result.Success)
             {
                 ModelState.AddModelError("", result.Message);

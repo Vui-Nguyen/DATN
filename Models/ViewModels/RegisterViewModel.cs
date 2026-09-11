@@ -12,6 +12,10 @@ namespace DATN.Models.ViewModels
         [EmailAddress(ErrorMessage = "Địa chỉ Email không đúng định dạng.")]
         public string Email { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+        [Phone(ErrorMessage = "Số điện thoại không đúng định dạng")]
+        public string Phone { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Mật khẩu phải từ 6 ký tự trở lên.")]
         [DataType(DataType.Password)]

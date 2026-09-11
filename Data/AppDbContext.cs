@@ -46,6 +46,7 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Shop> Shops { get; set; }
 
+    public virtual DbSet<SellerProfile> SellerProfiles { get; set; }
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<Voucher> Vouchers { get; set; }

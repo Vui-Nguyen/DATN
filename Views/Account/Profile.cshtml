@@ -1,4 +1,5 @@
-﻿@model DATN.Models.DTOs.UserDto
+﻿
+@model DATN.Models.ViewModels.ProfileViewModel
 
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
@@ -40,15 +41,16 @@
                         <h5 class="text-secondary mb-3"><i class="bi bi-pencil-square"></i> Cập nhật thông tin công khai</h5>
 
                         <div class="mb-3">
-                            <label for="FullName" class="form-label fw-bold">Họ và tên của bạn</label>
-                            <input type="text" id="FullName" name="FullName" class="form-control" value="@Model.FullName" required />
-                            <span class="text-danger" data-valmsg-for="FullName"></span>
+                            <label asp-for="FullName" class="form-label fw-bold">Họ và tên của bạn</label>
+                            <input asp-for="FullName" class="form-control" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
                         </div>
 
+                        <!-- Ô Số điện thoại -->
                         <div class="mb-4">
-                            <label for="Phone" class="form-label fw-bold">Số điện thoại liên hệ</label>
-                            <input type="tel" id="Phone" name="Phone" class="form-control" value="@Model.Phone" placeholder="Ví dụ: 0912345678" />
-                            <span class="text-danger" data-valmsg-for="Phone"></span>
+                            <label asp-for="Phone" class="form-label fw-bold">Số điện thoại liên hệ</label>
+                            <input asp-for="Phone" class="form-control" placeholder="Ví dụ: 0912345678" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center">
@@ -63,6 +65,31 @@
                 </div>
                 <div class="card-footer bg-light d-flex justify-content-around py-3">
                     <span class="text-muted">Nhóm quyền hiện tại: <strong class="text-dark">@Model.RoleName</strong></span>
+                    <div class="d-flex gap-3">
+                        @* Tùy chỉnh tên Role "Seller" cho đúng với Database của bạn (VD: "Người bán", "Vendor", v.v.) *@
+                        @if (Model.RoleName != "Seller" && Model.RoleName != "Admin")
+                        {
+                            @if (ViewBag.SellerStatus == null)
+                            {
+                                <a asp-controller="Account" asp-action="RegisterSeller" class="text-decoration-none text-success fw-bold">
+                                    <i class="bi bi-shop"></i> Đăng ký làm Seller
+                                </a>
+                            }
+                            else if (ViewBag.SellerStatus == 0)
+                            {
+                                <span class="text-warning fw-bold">
+                                    <i class="bi bi-hourglass-split"></i> Đang chờ Admin duyệt lên Seller...
+                                </span>
+                            }
+                            else if (ViewBag.SellerStatus == 2)
+                            {
+                                <span class="text-danger fw-bold">
+                                    <i class="bi bi-x-circle"></i> Đăng ký Seller bị từ chối
+                                </span>
+                                <a asp-controller="Account" asp-action="RegisterSeller" class="btn btn-sm btn-outline-danger ms-2">Đăng ký lại</a>
+                            }
+                            <span class="text-muted">|</span>
+                        }
                     <a asp-action="ChangePassword" class="text-decoration-none text-danger fw-bold">
                         <i class="bi bi-shield-lock"></i> Thay đổi mật khẩu tài khoản?
                     </a>

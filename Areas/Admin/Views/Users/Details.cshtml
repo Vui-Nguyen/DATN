@@ -1,0 +1,114 @@
+﻿@model DATN.Models.DTOs.UserDto
+
+@{
+    ViewData["Title"] = "Chi tiết người dùng";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Hồ sơ chi tiết: @Model.FullName</h2>
+        <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Quay lại danh sách
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="row">
+        <!-- Cột thông tin cơ bản -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-dark text-white">
+                    <i class="bi bi-person-lines-fill me-1"></i> Thông tin tài khoản
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tbody>
+                            <tr>
+                                <th style="width: 150px;" class="text-muted">Mã người dùng:</th>
+                                <td><strong>#@Model.UserID</strong></td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Họ và tên:</th>
+                                <td>@Model.FullName</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Trạng thái hoạt động:</th>
+                                <td>@(!Model.IsLocked ? "Đang hoạt động" : "Đã khóa")</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Địa chỉ Email:</th>
+                                <td><a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a></td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Số điện thoại:</th>
+                                <td>@(string.IsNullOrEmpty(Model.Phone) ? "Chưa cập nhật" : Model.Phone)</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Nhóm quyền:</th>
+                                <td>
+                                    <span class="badge @(Model.RoleName == "Admin" ? "bg-danger" : Model.RoleName == "Seller" ? "bg-success" : "bg-secondary") fs-6">
+                                        @Model.RoleName
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="bi bi-gear-fill me-1"></i> Quản trị tài khoản
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">Tại đây bạn có thể thay đổi quyền hạn hoặc khóa tài khoản của người dùng này.</p>
+
+                    <!-- Khóa / Mở khóa tài khoản -->
+                    <form asp-area="Admin" asp-controller="Users" asp-action="ToggleLock" asp-route-id="@Model.UserID" method="post" class="mb-4">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn @(!Model.IsLocked ? "btn-warning" : "btn-success") w-100" onclick="return confirm('Bạn có chắc chắn muốn thay đổi trạng thái hoạt động của tài khoản này?')">
+                            @if (!Model.IsLocked )
+                            {
+                                <i class="bi bi-lock-fill"></i> <text>Khóa tài khoản</text>
+                            }
+                            else
+                            {
+                                <i class="bi bi-unlock-fill"></i> <text>Mở khóa tài khoản</text>
+                            }
+                        </button>
+                    </form>
+
+                    <hr />
+
+                    <!-- Thay đổi phân quyền -->
+                    <form asp-area="Admin" asp-controller="Users" asp-action="ChangeRole" asp-route-id="@Model.UserID" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Chuyển đổi quyền hạn mới:</label>
+                            <div class="input-group">
+                                <select name="roleId" class="form-select">
+                                    <option value="2">Seller (Người bán)</option>
+                                    <option value="3">Customer (Khách hàng)</option>
+                                </select>
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('Cấp sai quyền có thể gây ảnh hưởng hệ thống. Bạn có chắc chắn?')">
+                                    Lưu quyền
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

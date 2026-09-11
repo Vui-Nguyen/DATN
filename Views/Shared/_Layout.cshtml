@@ -35,6 +35,13 @@
                                     <a class="nav-link text-danger fw-bold" asp-area="Admin" asp-controller="Categories" asp-action="Index"><i class="bi bi-speedometer2"></i> Trang quản trị (Admin)</a>
                                 </li>
                             }
+                            else if(User.IsInRole("Seller"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-success fw-bold" asp-area="Seller" asp-controller="Products" asp-action="Index"><i class="bi bi-speedometer2"></i> Trang quản trị (Người bán)</a>
+                                </li>
+                            }
+                            
                         }
                     </ul>
 

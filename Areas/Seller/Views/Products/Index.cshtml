@@ -1,14 +1,14 @@
-﻿@model DATN.Models.DTOs.PagedResult<DATN.Areas.Admin.Models.DTOs.ProductAdminDto>
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.ProductDto>
 
 @{
     ViewData["Title"] = "Quản lý sản phẩm";
-    Layout = "_AdminLayout";
+    Layout = "_SellerLayout";
 }
 
 <div class="container-fluid px-4 mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Danh sách sản phẩm trong hệ thống</h2>
-        <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-success">
+        <a asp-area="Seller" asp-controller="Products" asp-action="Create" class="btn btn-success">
             <i class="bi bi-plus"></i> Thêm sản phẩm mới
         </a>
     </div>
@@ -23,24 +23,40 @@
             <table class="table table-hover table-bordered align-middle">
                 <thead class="table-dark">
                     <tr>
+                        <th>STT</th>
                         <th>Mã SP</th>
                         <th>Tên mặt hàng sản phẩm</th>
-                        <th>Thuộc danh mục</th>
-                        <th>Thương hiệu</th>
+                        <th>Giá thành</th>
+                        <th>Ảnh</th>
                         <th class="text-center">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        // Khai báo pageSize trùng với bên Controller của bạn (đang là 10)
+                        int pageSize = 10;
+                        // Tính số thứ tự bắt đầu cho trang hiện tại (đặt ở TRƯỚC foreach)
+                        int stt = (Model.CurrentPage - 1) * pageSize;
+                    }
+
                     @foreach (var prod in Model.Items)
                     {
-                        <tr>
-                            <td>#@prod.ProductID</td>
-                            <td><strong>@prod.ProductName</strong></td>
-                            <td><span class="badge bg-secondary">@prod.CategoryName</span></td>
-                            <td>@prod.BrandName</td>
+                        stt++; // Tăng dần số thứ tự cho từng dòng sản phẩm
+                               <tr>
+                                   <td>@stt</td>
+                                   <td>#@prod.ProductID</td>
+                                   <td><strong>@prod.ProductName</strong></td>
+                                   <td><span class="badge bg-secondary">@prod.Price.ToString("N0") đ</span></td>
+                                   <td>
+                                @if (prod.Images != null && prod.Images.Count > 0)
+                                {
+                                    <img src="@prod.Images[0]" alt="@prod.ProductName" class="img-thumbnail" style="max-width: 100px;" />
+                                }
+                            </td>
                             <td class="text-center">
-                                <a asp-area="Admin" asp-controller="Products" asp-action="Edit" asp-route-id="@prod.ProductID" class="btn btn-sm btn-info text-white">Sửa</a>
-                                <form asp-area="Admin" asp-controller="Products" asp-action="Delete" asp-route-id="@prod.ProductID" method="post" class="d-inline">
+                                <a asp-area="Seller" asp-controller="Products" asp-action="Details" asp-route-id="@prod.ProductID" class="btn btn-sm btn-info text-white">Chi tiết</a>
+                                <a asp-area="Seller" asp-controller="Products" asp-action="Edit" asp-route-id="@prod.ProductID" class="btn btn-sm btn-info text-white">Sửa</a>
+                                <form asp-area="Seller" asp-controller="Products" asp-action="Delete" asp-route-id="@prod.ProductID" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Xóa sản phẩm này?')">Xóa</button>
                                 </form>

@@ -7,5 +7,7 @@
         public string Email { get; set; } = string.Empty;
         public string? Phone { get; set; }
         public string? RoleName { get; set; }
+
+        public bool IsLocked { get; set; }
     }
 }

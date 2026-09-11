@@ -1,0 +1,89 @@
+﻿@model DATN.Models.ViewModels.RegisterSellerViewModel
+
+@{
+    ViewData["Title"] = "Đăng ký trở thành Seller";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-shop"></i> ĐĂNG KÝ TRỞ THÀNH SELLER</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Vui lòng cung cấp thông tin chính xác để hệ thống xét duyệt yêu cầu của bạn.</p>
+
+                    <!-- QUAN TRỌNG: enctype="multipart/form-data" để upload file -->
+                    <form asp-controller="Account" asp-action="RegisterSeller" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+
+                        <h5 class="text-secondary mt-3 border-bottom pb-2">Thông tin liên hệ</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Họ và tên</label>
+                                <input asp-for="FullName" class="form-control" placeholder="Nhập họ tên đầy đủ..." />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Số điện thoại</label>
+                                <input asp-for="Phone" class="form-control" placeholder="Ví dụ: 0912345678" />
+                                <span asp-validation-for="Phone" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <h5 class="text-secondary mt-4 border-bottom pb-2">Thông tin thanh toán</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Tên ngân hàng</label>
+                                <input asp-for="BankName" class="form-control" placeholder="Ví dụ: Vietcombank, MBBank..." />
+                                <span asp-validation-for="BankName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Số tài khoản</label>
+                                <input asp-for="BankAccountNumber" class="form-control" placeholder="Nhập số tài khoản..." />
+                                <span asp-validation-for="BankAccountNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <h5 class="text-secondary mt-4 border-bottom pb-2">Xác minh danh tính</h5>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Số Căn cước công dân (CCCD)</label>
+                            <input asp-for="IdentityCardNumber" class="form-control" placeholder="Nhập 12 số CCCD..." />
+                            <span asp-validation-for="IdentityCardNumber" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Ảnh chân dung</label>
+                            <input asp-for="PortraitImage" type="file" class="form-control" accept="image/*" />
+                            <span asp-validation-for="PortraitImage" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ảnh CCCD (Mặt trước)</label>
+                                <input asp-for="FrontIdentityImage" type="file" class="form-control" accept="image/*" />
+                                <span asp-validation-for="FrontIdentityImage" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Ảnh CCCD (Mặt sau)</label>
+                                <input asp-for="BackIdentityImage" type="file" class="form-control" accept="image/*" />
+                                <span asp-validation-for="BackIdentityImage" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send-check"></i> Gửi Yêu Cầu Xét Duyệt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

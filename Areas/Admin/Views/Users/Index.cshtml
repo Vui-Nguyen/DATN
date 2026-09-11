@@ -1,0 +1,101 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.UserDto>
+
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Quản lý người dùng</h2>
+        <a asp-area="Admin" asp-controller="Users" asp-action="PendingSellers" class="btn btn-warning text-dark fw-bold shadow-sm">
+            <i class="bi bi-shop"></i> Duyệt Seller
+        </a>
+        <!-- Form tìm kiếm -->
+        <form asp-area="Admin" asp-controller="Users" asp-action="Index" method="get" class="d-flex">
+            <input type="text" name="keyword" class="form-control me-2" placeholder="Tìm tên, email..." value="@ViewBag.Keyword">
+            <button type="submit" class="btn btn-outline-primary"><i class="bi bi-search"></i> Tìm</button>
+            @if (!string.IsNullOrEmpty(ViewBag.Keyword))
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary ms-2">Xóa</a>
+            }
+        </form>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-bordered table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 80px;">Mã ID</th>
+                        <th>Họ và tên</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Vai trò</th>
+                        <th>Trạng thái hoạt động</th>
+                        <th style="width: 150px;" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @* Lưu ý: Nếu thuộc tính chứa danh sách trong PagedResult của bạn không phải tên là "Items" (ví dụ: Data, List...), hãy đổi lại cho đúng nhé *@
+                    @if (Model.Items == null || !Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Không tìm thấy người dùng nào.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var user in Model.Items)
+                        {
+                            <tr>
+                                <td>#@user.UserID</td>
+                                <td><strong>@user.FullName</strong></td>
+                                <td>@user.Email</td>
+                                <td>@(string.IsNullOrEmpty(user.Phone) ? "Chưa cập nhật" : user.Phone)</td>
+                                <td>
+                                    <span class="badge @(user.RoleName == "Admin" ? "bg-danger" : user.RoleName == "Seller" ? "bg-success" : "bg-secondary")">
+                                        @user.RoleName
+                                    </span>
+                                </td>
+                                <td>@(!user.IsLocked ? "Đang hoạt động" : "Đã khóa")</td>
+                                <td class="text-center">
+                                    <a asp-area="Admin" asp-controller="Users" asp-action="Details" asp-route-id="@user.UserID" class="btn btn-sm btn-info text-white">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+                                </td>
+                                
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-end mb-0">
+                        <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)" asp-route-keyword="@ViewBag.Keyword">Trước</a>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link">Trang @Model.CurrentPage / @Model.TotalPages</span>
+                        </li>
+                        <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)" asp-route-keyword="@ViewBag.Keyword">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+</div>

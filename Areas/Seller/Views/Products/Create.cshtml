@@ -2,16 +2,16 @@
 
 @{
     ViewData["Title"] = "Thêm sản phẩm mới";
-    Layout = "_AdminLayout";
+    Layout = "_SellerLayout";
 }
 
-<div class="container mt-4" style="max-width: 800px;">
+<div class="container mt-4" style="max-width: 900px;">
     <div class="card shadow-sm">
         <div class="card-header bg-success text-white">
             <h4>Đăng ký thông tin sản phẩm mới</h4>
         </div>
         <div class="card-body">
-            <form asp-area="Admin" asp-controller="Products" asp-action="Create" method="post" enctype="multipart/form-data">
+            <form asp-area="Seller" asp-controller="Products" asp-action="Create" method="post" enctype="multipart/form-data">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
@@ -42,16 +42,119 @@
                     <textarea asp-for="Description" class="form-control" rows="4"></textarea>
                 </div>
 
+                <!-- PHẦN QUẢN LÝ NHIỀU PHÂN LOẠI (VARIANTS) -->
+                <hr />
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold mb-0">Danh sách phân loại sản phẩm (Màu sắc, Size,...)</label>
+                        <button type="button" class="btn btn-sm btn-primary" id="add-variant-btn">+ Thêm phân loại</button>
+                    </div>
+
+                    <div id="variants-container">
+                        <!-- Dòng phân loại mặc định đầu tiên -->
+                        <div class="variant-item border p-3 mb-2 rounded bg-light">
+                            <div class="row align-items-center">
+                                <div class="col-md-4 mb-2 mb-md-0">
+                                    <label class="form-label small">Tên phân loại</label>
+                                    <input type="text" name="Variants[0].VariantName" class="form-control" placeholder="Ví dụ: Đỏ - Size L" required />
+                                </div>
+                                <div class="col-md-3 mb-2 mb-md-0">
+                                    <label class="form-label small">Giá bán (VNĐ)</label>
+                                    <input type="number" step="1000" name="Variants[0].Price" class="form-control" placeholder="Giá" required />
+                                </div>
+                                <div class="col-md-3 mb-2 mb-md-0">
+                                    <label class="form-label small">Tồn kho</label>
+                                    <input type="number" name="Variants[0].Stock" class="form-control" placeholder="Số lượng" required />
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-variant-btn mt-4" style="display:none;">Xóa</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+
                 <div class="mb-4">
                     <label class="form-label fw-bold">Tải lên bộ sưu tập hình ảnh sản phẩm</label>
                     <input type="file" name="images" class="form-control" multiple accept="image/*" />
                 </div>
 
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary px-4">Tạo sản phẩm</button>
+                    <button type="submit" class="btn btn-success px-4">Tạo sản phẩm</button>
                     <a asp-action="Index" class="btn btn-secondary">Hủy bỏ</a>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        let variantIndex = 1;
+
+        // Xử lý sự kiện bấm nút Thêm phân loại
+        document.getElementById('add-variant-btn').addEventListener('click', function () {
+            const container = document.getElementById('variants-container');
+
+            const html = `
+                <div class="variant-item border p-3 mb-2 rounded bg-light">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <label class="form-label small">Tên phân loại</label>
+                            <input type="text" name="Variants[${variantIndex}].VariantName" class="form-control" placeholder="Ví dụ: Đỏ - Size L" required />
+                        </div>
+                        <div class="col-md-3 mb-2 mb-md-0">
+                            <label class="form-label small">Giá bán (VNĐ)</label>
+                            <input type="number" step="1000" name="Variants[${variantIndex}].Price" class="form-control" placeholder="Giá" required />
+                        </div>
+                        <div class="col-md-3 mb-2 mb-md-0">
+                            <label class="form-label small">Tồn kho</label>
+                            <input type="number" name="Variants[${variantIndex}].Stock" class="form-control" placeholder="Số lượng" required />
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-variant-btn mt-4">Xóa</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+            variantIndex++;
+            updateRemoveButtons();
+        });
+
+        // Xử lý sự kiện xóa phân loại
+        document.getElementById('variants-container').addEventListener('click', function (e) {
+            if (e.target && e.target.classList.contains('remove-variant-btn')) {
+                e.target.closest('.variant-item').remove();
+                reindexVariants();
+                updateRemoveButtons();
+            }
+        });
+
+        // Cập nhật lại chỉ số Index (Variants[0], Variants[1]...) để ASP.NET Core Model Binding nhận diện đúng khi Submit
+        function reindexVariants() {
+            const items = document.querySelectorAll('.variant-item');
+            variantIndex = items.length;
+            items.forEach((item, index) => {
+                item.querySelector('input[name*="VariantName"]').name = `Variants[${index}].VariantName`;
+                item.querySelector('input[name*="Price"]').name = `Variants[${index}].Price`;
+                item.querySelector('input[name*="Stock"]').name = `Variants[${index}].Stock`;
+            });
+        }
+
+        // Ẩn nút xóa nếu chỉ còn lại duy nhất 1 dòng phân loại
+        function updateRemoveButtons() {
+            const items = document.querySelectorAll('.variant-item');
+            const removeButtons = document.querySelectorAll('.remove-variant-btn');
+            removeButtons.forEach(btn => {
+                if (items.length > 1) {
+                    btn.style.display = 'block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

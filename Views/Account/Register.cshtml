@@ -28,7 +28,11 @@
                             <input asp-for="Email" class="form-control" placeholder="example@gmail.com" />
                             <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
-
+                        <div class="form-group mb-3">
+                            <label asp-for="Phone" class="form-label">Số điện thoại</label>
+                            <input asp-for="Phone" class="form-control" placeholder="0123456789" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
                         <div class="form-group mb-3">
                             <label asp-for="Password" class="form-label">Mật khẩu bảo mật</label>
                             <input asp-for="Password" class="form-control" type="password" placeholder="Tối thiểu 6 ký tự" />

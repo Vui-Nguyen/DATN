@@ -1,0 +1,110 @@
+﻿@model IEnumerable<DATN.Models.Entities.SellerProfile>
+
+@{
+    ViewData["Title"] = "Duyệt hồ sơ Seller";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <h2 class="mt-4">Quản lý duyệt hồ sơ Seller</h2>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Users" asp-action="Index">Quay lại</a></li>
+        <li class="breadcrumb-item active">Duyệt hồ sơ</li>
+    </ol>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-table me-1"></i>
+            Danh sách chờ duyệt (@Model.Count() yêu cầu)
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Thông tin tài khoản</th>
+                            <th>Thanh toán & CCCD</th>
+                            <th>Hình ảnh xác minh</th>
+                            <th>Ngày gửi</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    Không có yêu cầu đăng ký nào đang chờ duyệt.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int stt = 1;
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@stt</td>
+                                    <td>
+                                        <p class="mb-1 fw-bold">@item.User.FullName</p>
+                                        <p class="mb-0 text-muted small"><i class="bi bi-envelope"></i> @item.User.Email</p>
+                                        @* Nếu có cột Phone trong bảng User thì mở comment dòng dưới *@
+                                        @* <p class="mb-0 text-muted small"><i class="bi bi-telephone"></i> @item.User.Phone</p> *@
+                                    </td>
+                                    <td>
+                                        <p class="mb-1"><strong>NH:</strong> @item.BankName</p>
+                                        <p class="mb-1"><strong>STK:</strong> <span class="text-primary">@item.BankAccountNumber</span></p>
+                                        <p class="mb-0"><strong>CCCD:</strong> @item.IdentityCardNumber</p>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            <a href="@item.PortraitImage" target="_blank" class="badge bg-info text-decoration-none">
+                                                <i class="bi bi-person-bounding-box"></i> Ảnh chân dung
+                                            </a>
+                                            <a href="@item.FrontIdentityImage" target="_blank" class="badge bg-secondary text-decoration-none">
+                                                <i class="bi bi-credit-card-2-front"></i> CCCD Mặt trước
+                                            </a>
+                                            <a href="@item.BackIdentityImage" target="_blank" class="badge bg-secondary text-decoration-none">
+                                                <i class="bi bi-credit-card-2-back"></i> CCCD Mặt sau
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <!-- Nút Duyệt -->
+                                            <form asp-action="ApproveSeller" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn DUYỆT tài khoản này lên làm Seller?');">
+                                                <button type="submit" class="btn btn-success btn-sm" title="Duyệt yêu cầu">
+                                                    <i class="bi bi-check-lg"></i> Duyệt
+                                                </button>
+                                            </form>
+
+                                            <!-- Nút Từ chối -->
+                                            <form asp-action="RejectSeller" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn TỪ CHỐI yêu cầu này?');">
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Từ chối yêu cầu">
+                                                    <i class="bi bi-x-lg"></i> Từ chối
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                stt++;
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

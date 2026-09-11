@@ -24,12 +24,13 @@ namespace DATN
                     options.AccessDeniedPath = "/Account/Login";
 
                     // Cookie lifetime
-                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                    options.ExpireTimeSpan = TimeSpan.FromDays(1);
                 });
 
             // Add services for Razor Pages and MVC controllers with views
             builder.Services.AddRazorPages();
             builder.Services.AddControllersWithViews();
+            builder.Services.AddHttpContextAccessor();
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -43,6 +44,7 @@ namespace DATN
             builder.Services.AddScoped<ICartService, CartService>();
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
+            builder.Services.AddScoped<ISellerService, SellerService>();
 
             var app = builder.Build();
 
