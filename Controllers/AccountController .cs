@@ -236,5 +236,110 @@ namespace DATN.Controllers
             TempData["Success"] = result.Message;
             return RedirectToAction("Profile");
         }
+        [HttpGet]
+        public IActionResult CreateAdd()
+        {
+            var model = new AddressViewModel();
+            return View(model);
+        }
+
+        // 2. HTTP POST: Nhận dữ liệu từ form khi người dùng bấm nút Lưu
+        [HttpPost]
+        [ValidateAntiForgeryToken] // Bảo vệ chống tấn công CSRF
+        public async Task<IActionResult> CreateAdd(AddressViewModel model)
+        {
+            // Fix lỗi 1: Dùng TryParse để tránh crash nếu user chưa đăng nhập
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int currentUserId) || currentUserId == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            model.UserID = currentUserId;
+            ModelState.Remove(nameof(model.UserID));
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                var isSuccess = await _userService.AddAddressAsync(model);
+
+                if (isSuccess)
+                {
+                    TempData["SuccessMessage"] = "Thêm địa chỉ mới thành công!";
+                    // Fix lỗi 2: Trỏ đúng tên action AddressReview thay vì Index
+                    return RedirectToAction("AddressReview");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Không thể thêm địa chỉ. Vui lòng kiểm tra lại thông tin.");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AddressReview()
+        {
+            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int currentUserId) || currentUserId == 0)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var addressList = await _userService.GetAllAddressesAsync(currentUserId);
+
+            return View(addressList);
+        }
+        // GET: Account/EditAddress/5
+        [HttpGet]
+        public async Task<IActionResult> EditAddress(int id)
+        {
+            string userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var model = await _userService.GetAddressByIdAsync(id, userId);
+            if (model == null)
+            {
+                return NotFound();
+            }
+
+            return View(model);
+        }
+
+        // POST: Account/EditAddress
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAddress(AddressViewModel model)
+        {
+            string userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var success = await _userService.UpdateAddressAsync(userId, model);
+            if (!success)
+            {
+                return NotFound();
+            }
+
+            TempData["Success"] = "Cập nhật địa chỉ thành công!";
+            return RedirectToAction("AddressReview");
+        }
     }
 }

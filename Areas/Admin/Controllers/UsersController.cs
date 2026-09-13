@@ -67,7 +67,7 @@ namespace DATN.Areas.Admin.Controllers
                 .Where(s => s.Status == 0)
                 .ToListAsync();
 
-            return View(pendingList); // Bạn tự tạo một View dạng Table để hiển thị danh sách này nhé
+            return View(pendingList); 
         }
 
         // 2. Hàm xử lý DUYỆT yêu cầu

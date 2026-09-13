@@ -1,4 +1,5 @@
-﻿using DATN.Models.DTOs;
+﻿using DATN.Areas.Seller.Models.DTOs;
+using DATN.Models.DTOs;
 using DATN.Models.Entities;
 using DATN.Models.ViewModels;
 
@@ -10,5 +11,6 @@ namespace DATN.Services.Interfaces
         Task<ServiceResult> RegisterSellerAsync(int userId, RegisterSellerViewModel model);
         Task<SellerProfile?> GetProfileByUserIdAsync(int userId);
         Task<bool> UpdateProfileAsync(SellerProfile model);
+        Task<ServiceResult<SellerDashboardDto>> GetDashboardDataAsync(int userId);
     }
 }

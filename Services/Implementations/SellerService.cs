@@ -4,6 +4,8 @@ using DATN.Models.Entities;
 using DATN.Models.ViewModels;
 using DATN.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using DATN.Areas.Seller.Models;
+using DATN.Areas.Seller.Models.DTOs;
 
 namespace DATN.Services.Implementations
 {
@@ -41,6 +43,7 @@ namespace DATN.Services.Implementations
                 // 3. Tự động khởi tạo Shop mới gắn với UserID này
                 var shop = new Shop
                 {
+                    IsLocked = false,
                     UserId = profile.UserId,
                     ShopName = profile.User?.FullName,
                     Description = "Cửa hàng mới đăng ký",
@@ -190,6 +193,71 @@ namespace DATN.Services.Implementations
 
             _context.SellerProfiles.Update(existingProfile);
             return await _context.SaveChangesAsync() > 0;
+        }
+        public async Task<ServiceResult<SellerDashboardDto>> GetDashboardDataAsync(int userId)
+        {
+            // 1. Tìm cửa hàng của user hiện tại
+            var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == userId);
+
+            if (shop == null)
+            {
+                return new ServiceResult<SellerDashboardDto>
+                {
+                    Success = false,
+                    Message = "Người dùng chưa có cửa hàng."
+                };
+            }
+
+            if (shop.IsLocked == true) 
+            {
+                return new ServiceResult<SellerDashboardDto>
+                {
+                    Success = false,
+                    Message = "Cửa hàng của bạn đang bị khóa."
+                };
+            }
+
+            // 2. Thống kê sản phẩm (Chỉ đếm sản phẩm chưa bị xóa)
+            var totalProducts = await _context.Products
+                .CountAsync(p => p.ShopId == shop.ShopId && p.IsDeleted == false);
+
+            // 3. Lấy danh sách đơn hàng của Shop
+            // Lấy các đơn hàng có CHỨA ÍT NHẤT 1 SẢN PHẨM thuộc về Shop hiện tại
+            var shopOrders = await (from o in _context.Orders
+                                    join oi in _context.OrderItems on o.OrderId equals oi.OrderId
+                                    join v in _context.ProductVariants on oi.VariantId equals v.VariantId
+                                    join p in _context.Products on v.ProductId equals p.ProductId
+                                    where p.ShopId == shop.ShopId
+                                    select o)
+                              .Distinct()
+                              .Include(o => o.OrderItems)
+                              .ToListAsync();
+            // 4. Tính toán các chỉ số đơn hàng
+            var totalOrders = shopOrders.Count;
+
+            // Giả sử Status = 0 là Chờ xác nhận
+            var pendingOrders = shopOrders.Count(o => o.Status == "Pending");
+
+            
+            var totalRevenue = shopOrders
+        .Where(o => o.Status == "Completed")
+        .Sum(o => o.TotalAmount);
+
+            // 5. Đóng gói dữ liệu trả về Controller
+            var dashboardData = new SellerDashboardDto
+            {
+                TotalProducts = totalProducts,
+                TotalOrders = totalOrders,
+                PendingOrders = pendingOrders,
+                TotalRevenue = totalRevenue
+            };
+
+            return new ServiceResult<SellerDashboardDto>
+            {
+                Success = true,
+                Data = dashboardData,
+                Message = "Lấy dữ liệu thành công"
+            };
         }
     }
 }

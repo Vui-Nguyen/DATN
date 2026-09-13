@@ -17,5 +17,8 @@ public partial class Payment
 
     public string? Status { get; set; }
 
+    public string? TransactionId { get; set; }     
+
+    public string? GatewayResponse { get; set; }
     public virtual Order Order { get; set; } = null!;
 }

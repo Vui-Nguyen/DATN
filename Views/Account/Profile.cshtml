@@ -1,5 +1,4 @@
-﻿
-@model DATN.Models.ViewModels.ProfileViewModel
+﻿@model DATN.Models.ViewModels.ProfileViewModel
 
 @{
     ViewData["Title"] = "Hồ sơ cá nhân";
@@ -53,6 +52,23 @@
                             <span asp-validation-for="Phone" class="text-danger"></span>
                         </div>
 
+                        <div class="card bg-light border-0 mb-4">
+                            <div class="card-body d-flex justify-content-between align-items-center py-3">
+                                <div>
+                                    <h6 class="mb-1 fw-bold text-dark"><i class="bi bi-geo-alt-fill text-danger"></i> Sổ địa chỉ giao hàng</h6>
+                                    <p class="mb-0 text-muted small">Quản lý các địa chỉ nhận hàng của bạn để thuận tiện khi mua sắm.</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a asp-controller="Account" asp-action="AddressReview" class="btn btn-outline-primary btn-sm text-nowrap">
+                                        <i class="bi bi-list-ul"></i> Sổ địa chỉ
+                                    </a>
+                                    <a asp-controller="Account" asp-action="CreateAdd" class="btn btn-danger btn-sm text-nowrap">
+                                        <i class="bi bi-plus-circle"></i> Thêm mới
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center">
                             <a asp-controller="Product" asp-action="Index" class="btn btn-outline-secondary">
                                 <i class="bi bi-arrow-left"></i> Quay lại mua sắm
@@ -66,7 +82,6 @@
                 <div class="card-footer bg-light d-flex justify-content-around py-3">
                     <span class="text-muted">Nhóm quyền hiện tại: <strong class="text-dark">@Model.RoleName</strong></span>
                     <div class="d-flex gap-3">
-                        @* Tùy chỉnh tên Role "Seller" cho đúng với Database của bạn (VD: "Người bán", "Vendor", v.v.) *@
                         @if (Model.RoleName != "Seller" && Model.RoleName != "Admin")
                         {
                             @if (ViewBag.SellerStatus == null)
@@ -90,15 +105,15 @@
                             }
                             <span class="text-muted">|</span>
                         }
-                    <a asp-action="ChangePassword" class="text-decoration-none text-danger fw-bold">
-                        <i class="bi bi-shield-lock"></i> Thay đổi mật khẩu tài khoản?
-                    </a>
+                        <a asp-action="ChangePassword" class="text-decoration-none text-danger fw-bold">
+                            <i class="bi bi-shield-lock"></i> Thay đổi mật khẩu tài khoản?
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+        <partial name="_ValidationScriptsPartial" />
 }

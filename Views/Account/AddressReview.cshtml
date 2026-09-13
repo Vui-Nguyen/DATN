@@ -1,0 +1,70 @@
+﻿@model IEnumerable<DATN.Models.ViewModels.AddressViewModel>
+
+@{
+    ViewData["Title"] = "Sổ địa chỉ của tôi";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-geo-alt-fill text-danger"></i> Sổ địa chỉ giao hàng</h2>
+        <a asp-action="CreateAdd" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Thêm địa chỉ mới
+        </a>
+    </div>
+
+    <!-- Hiển thị thông báo thành công -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow">
+        <div class="card-body">
+            @if (Model == null || !Model.Any())
+            {
+                <p class="text-muted text-center py-4 mb-0">Bạn chưa có địa chỉ nhận hàng nào. Hãy thêm mới địa chỉ!</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Người nhận</th>
+                                <th>Số điện thoại</th>
+                                <th>Địa chỉ chi tiết</th>
+                                <th>Trạng thái</th>
+                                <th class="text-end">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.ReceiverName</td>
+                                    <td>@item.Phone</td>
+                                    <td>@item.AddressDetail</td>
+                                    <td>
+                                        @if (item.IsDefault)
+                                        {
+                                            <span class="badge bg-success">Mặc định</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-action="EditAddress" asp-route-id="@item.AddressID" class="btn btn-sm btn-outline-warning me-1">
+                                            <i class="bi bi-pencil-square"></i> Sửa
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

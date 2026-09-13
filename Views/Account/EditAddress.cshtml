@@ -1,0 +1,66 @@
+﻿@model DATN.Models.ViewModels.AddressViewModel
+
+@{
+    ViewData["Title"] = "Sửa địa chỉ";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">@ViewData["Title"]</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-controller="Account" asp-action="EditAddress" method="post">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <!-- Ẩn AddressID và UserID để gửi ngầm về Controller -->
+                        <input type="hidden" asp-for="AddressID" />
+                        <input type="hidden" asp-for="UserID" />
+
+                        <!-- Tên người nhận -->
+                        <div class="mb-3">
+                            <label asp-for="ReceiverName" class="form-label fw-bold"></label>
+                            <input asp-for="ReceiverName" class="form-control" placeholder="Nhập họ tên người nhận..." />
+                            <span asp-validation-for="ReceiverName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Số điện thoại -->
+                        <div class="mb-3">
+                            <label asp-for="Phone" class="form-label fw-bold"></label>
+                            <input asp-for="Phone" class="form-control" placeholder="Ví dụ: 0912345678" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+
+                        <!-- Địa chỉ chi tiết -->
+                        <div class="mb-3">
+                            <label asp-for="AddressDetail" class="form-label fw-bold"></label>
+                            <textarea asp-for="AddressDetail" class="form-control" rows="3" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành phố..."></textarea>
+                            <span asp-validation-for="AddressDetail" class="text-danger"></span>
+                        </div>
+
+                        <!-- Đặt làm mặc định -->
+                        <div class="mb-3 form-check">
+                            <input asp-for="IsDefault" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsDefault" class="form-check-label"></label>
+                        </div>
+
+                        <!-- Nút bấm -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">Cập nhật địa chỉ</button>
+                            <a asp-action="AddressReview" class="btn btn-secondary">Quay lại danh sách</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

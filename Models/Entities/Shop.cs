@@ -14,6 +14,7 @@ public partial class Shop
     public string? Description { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+    public bool IsLocked { get; set; } = false;
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 

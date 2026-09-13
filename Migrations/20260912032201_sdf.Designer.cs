@@ -4,6 +4,7 @@ using DATN.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DATN.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912032201_sdf")]
+    partial class sdf
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -168,22 +171,10 @@ namespace DATN.Migrations
                         .HasColumnType("int")
                         .HasColumnName("AddressID");
 
-                    b.Property<decimal>("DiscountAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("OrderDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("ShippingFee")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Status")
                         .ValueGeneratedOnAdd()
@@ -250,12 +241,6 @@ namespace DATN.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
 
-                    b.Property<int?>("ChangedBy")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("OrderId")
                         .HasColumnType("int")
                         .HasColumnName("OrderID");
@@ -290,9 +275,6 @@ namespace DATN.Migrations
                     b.Property<decimal?>("Amount")
                         .HasColumnType("decimal(18, 2)");
 
-                    b.Property<string>("GatewayResponse")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("OrderId")
                         .HasColumnType("int")
                         .HasColumnName("OrderID");
@@ -309,9 +291,6 @@ namespace DATN.Migrations
                     b.Property<string>("Status")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("TransactionId")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PaymentId")
                         .HasName("PK__Payments__9B556A583B4D286E");

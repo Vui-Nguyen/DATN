@@ -102,58 +102,99 @@ namespace YourApp.Services.Implementations
 
         public async Task<CheckoutViewModel> BuildCheckoutModelAsync(int userId)
         {
-            // Tìm địa chỉ mặc định của người dùng từ hệ thống bảng Addresses (nếu có trong sơ đồ DB)
-            var defaultAddress = await _context.Addresses
+            // Lấy toàn bộ danh sách địa chỉ của user từ database
+            var addresses = await _context.Addresses
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault==true);
+                .Where(a => a.UserId == userId)
+                .Select(a => new AddressDto
+                {
+                    AddressID = a.AddressId,
+                    ReceiverName = a.ReceiverName,
+                    Phone = a.Phone,
+                    AddressDetail = a.AddressDetail,
+                    IsDefault = a.IsDefault
+                })
+                .ToListAsync();
+
+            // Tìm địa chỉ mặc định để set làm mặc định được chọn
+            var defaultAddress = addresses.FirstOrDefault(a => a.IsDefault == true) ?? addresses.FirstOrDefault();
 
             return new CheckoutViewModel
             {
+                UserAddresses = addresses,
+                SelectedAddressId = defaultAddress?.AddressID ?? 0,
                 ReceiverName = defaultAddress?.ReceiverName ?? "",
                 Phone = defaultAddress?.Phone ?? "",
                 AddressDetail = defaultAddress?.AddressDetail ?? ""
             };
         }
-
         public async Task<OrderResult> ProcessCheckoutAsync(int userId, CheckoutViewModel model)
         {
-            var cart = await _context.Carts
-                .Include(c => c.CartItems)
-                .ThenInclude(i => i.Variant)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            if (cart == null || !cart.CartItems.Any())
-                return new OrderResult { Success = false, Message = "Giỏ hàng của bạn đang trống." };
-
-            decimal total = cart.CartItems.Sum(i => i.Quantity * (i.Variant != null ? i.Variant.Price : 0));
-
-            // 1. Tạo bản ghi đơn hàng
-            var order = new Order
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                UserId = userId,
-                OrderDate = DateTime.Now,
-                TotalAmount = total,
-                // Giả định gán thông tin nhận hàng vào trường dữ liệu mở rộng
-            };
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
 
-            // 2. Chuyển đổi CartItems thành OrderItems
-            foreach (var item in cart.CartItems)
-            {
-                _context.OrderItems.Add(new OrderItem
+                var defaultAddress = await _context.Addresses
+                                    .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault == true);
+
+                if (defaultAddress == null)
+                    return new OrderResult { Success = false, Message = "Vui lòng thiết lập địa chỉ giao hàng mặc định." };
+
+                var cart = await _context.Carts
+                    .Include(c => c.CartItems)
+                    .ThenInclude(i => i.Variant)
+                    .FirstOrDefaultAsync(c => c.UserId == userId);
+
+                if (cart == null || !cart.CartItems.Any())
+                    return new OrderResult { Success = false, Message = "Giỏ hàng của bạn đang trống." };
+
+                decimal total = cart.CartItems.Sum(i => i.Quantity * (i.Variant != null ? i.Variant.Price : 0));
+
+                // 1. Tạo bản ghi đơn hàng 
+                var order = new Order
                 {
-                    OrderId = order.OrderId,
-                    VariantId = item.VariantId,
-                    Quantity = item.Quantity
-                });
+                    UserId = userId,
+                    AddressId = defaultAddress.AddressId, // Liên kết chuẩn qua khóa ngoại AddressId
+                    OrderDate = DateTime.Now,
+                    TotalAmount = total,
+                    Status = "Pending",
+                    PaymentMethod = model.PaymentMethod // Nếu entity Order đã có thuộc tính này
+                };
+                _context.Orders.Add(order);
+                await _context.SaveChangesAsync();
+
+                // 2. Chuyển đổi CartItems thành OrderItems 
+                foreach (var item in cart.CartItems)
+                {
+                    if (item.Variant == null || item.Variant.Stock < item.Quantity)
+                    {
+                        await transaction.RollbackAsync();
+                        return new OrderResult { Success = false, Message = $"Sản phẩm không đủ số lượng trong kho." };
+                    }
+
+                    // Trừ kho
+                    item.Variant.Stock -= item.Quantity;
+                    _context.OrderItems.Add(new OrderItem
+                    {
+                        OrderId = order.OrderId,
+                        VariantId = item.VariantId,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.Variant?.Price ?? 0 
+                    });
+                }
+
+                // 3. Xóa các mặt hàng trong giỏ sau khi đặt hàng
+                _context.CartItems.RemoveRange(cart.CartItems);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                return new OrderResult { Success = true, OrderId = order.OrderId };
             }
-
-            // 3. Xóa các mặt hàng trong giỏ sau khi đặt hàng
-            _context.CartItems.RemoveRange(cart.CartItems);
-            await _context.SaveChangesAsync();
-
-            return new OrderResult { Success = true, OrderId = order.OrderId };
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new OrderResult { Success = false, Message = "Đã xảy ra lỗi trong quá trình xử lý đơn hàng: " + ex.Message };
+            }
         }
     }
 }

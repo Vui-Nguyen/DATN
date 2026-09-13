@@ -16,6 +16,13 @@ public partial class Order
     public decimal TotalAmount { get; set; }
 
     public string? Status { get; set; }
+    public string? Note { get; set; }             // Ghi chú của khách hàng
+
+    public decimal ShippingFee { get; set; } = 0;   // Phí vận chuyển
+
+    public decimal DiscountAmount { get; set; } = 0;// Số tiền giảm giá từ voucher
+
+    public string? PaymentMethod { get; set; }      // Phương thức thanh toán (COD, BankTransfer...)
 
     public virtual Address Address { get; set; } = null!;
 

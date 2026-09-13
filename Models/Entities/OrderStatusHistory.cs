@@ -13,5 +13,8 @@ public partial class OrderStatusHistory
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string? Note { get; set; }            // Ghi chú hoặc nguyên nhân thay đổi trạng thái (VD: Khách yêu cầu hủy, Đã giao cho shipper)
+
+    public int? ChangedBy { get; set; }
     public virtual Order Order { get; set; } = null!;
 }

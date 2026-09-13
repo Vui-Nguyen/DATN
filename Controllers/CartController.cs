@@ -69,6 +69,8 @@ namespace DATN.Controllers
         }
 
         // GET: /Cart/Checkout
+        [HttpGet]
+        [Authorize]
         public async Task<IActionResult> Checkout()
         {
             var userId = GetUserId();
@@ -85,6 +87,7 @@ namespace DATN.Controllers
 
         // POST: /Cart/Checkout
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(CheckoutViewModel model)
         {

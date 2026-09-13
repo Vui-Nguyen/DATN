@@ -7,6 +7,9 @@ namespace DATN.Services.Interfaces
 {
     public interface IUserService
     {
+        Task<bool> UpdateAddressAsync(int userId, AddressViewModel model);
+        Task<AddressViewModel?> GetAddressByIdAsync(int addressId, int userId);
+        Task<List<AddressViewModel>> GetAllAddressesAsync(int userId);
         // Client-side Methods
         Task<ServiceResult> RegisterAsync(RegisterViewModel model);
         Task<UserDto> AuthenticateAsync(string email, string password);
@@ -18,5 +21,6 @@ namespace DATN.Services.Interfaces
         Task<PagedResult<UserDto>> GetAllAsync(int page, string? keyword);
         Task<ServiceResult> ToggleLockAsync(int id);
         Task<ServiceResult> ChangeRoleAsync(int id, int roleId);
+        Task<bool> AddAddressAsync(AddressViewModel model);
     }
 }
