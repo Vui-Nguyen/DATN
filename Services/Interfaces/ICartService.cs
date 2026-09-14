@@ -10,7 +10,6 @@ namespace DATN.Services.Interfaces
         Task AddToCartAsync(int userId, int variantId, int quantity);
         Task UpdateQuantityAsync(int userId, int cartItemId, int quantity);
         Task RemoveItemAsync(int userId, int cartItemId);
-        Task<CheckoutViewModel> BuildCheckoutModelAsync(int userId);
-        Task<OrderResult> ProcessCheckoutAsync(int userId, CheckoutViewModel model);
+
     }
 }

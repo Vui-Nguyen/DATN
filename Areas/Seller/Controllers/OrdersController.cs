@@ -16,7 +16,7 @@ namespace DATN.Areas.Seller.Controllers
             _orderService = orderService;
         }
 
-        // GET: /Admin/Orders/Index
+        // GET: /Orders/Index
         // Danh sách đơn hàng (có thể lọc theo trạng thái, ngày, ...)
         public async Task<IActionResult> Index(string? status = null, int page = 1)
         {
@@ -25,16 +25,16 @@ namespace DATN.Areas.Seller.Controllers
             return View(orders);
         }
 
-        // GET: /Admin/Orders/Details/5
+        // GET: /Orders/Details/5
         // Duyệt đơn - xem chi tiết đơn hàng
         public async Task<IActionResult> Details(int id)
         {
-            var order = await _orderService.GetAdminDetailAsync(id);
+            var order = await _orderService.GetSellerDetailAsync(id);
             if (order == null) return NotFound();
             return View(order);
         }
 
-        // POST: /Admin/Orders/Approve/5
+        // POST: /Orders/Approve/5
         // Duyệt đơn hàng (chuyển sang trạng thái Confirmed)
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -45,7 +45,7 @@ namespace DATN.Areas.Seller.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        // POST: /Admin/Orders/UpdateStatus/5
+        // POST: /Orders/UpdateStatus/5
         // Cập nhật trạng thái đơn hàng (Pending, Confirmed, Shipping, Delivered, Cancelled)
         [HttpPost]
         [ValidateAntiForgeryToken]

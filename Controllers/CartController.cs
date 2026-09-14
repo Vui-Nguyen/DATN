@@ -68,41 +68,7 @@ namespace DATN.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: /Cart/Checkout
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> Checkout()
-        {
-            var userId = GetUserId();
-            var cart = await _cartService.GetCartAsync(userId);
-            if (cart == null || !cart.Items.Any())
-            {
-                TempData["Error"] = "Giỏ hàng trống.";
-                return RedirectToAction(nameof(Index));
-            }
+       
 
-            var model = await _cartService.BuildCheckoutModelAsync(userId);
-            return View(model);
-        }
-
-        // POST: /Cart/Checkout
-        [HttpPost]
-        [Authorize]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(CheckoutViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            var result = await _cartService.ProcessCheckoutAsync(GetUserId(), model);
-            if (!result.Success)
-            {
-                ModelState.AddModelError("", result.Message);
-                return View(model);
-            }
-
-            TempData["Success"] = "Đặt hàng thành công!";
-            return RedirectToAction("Details", "Order", new { id = result.OrderId });
-        }
     }
 }

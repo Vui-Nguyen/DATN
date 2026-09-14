@@ -240,7 +240,7 @@ namespace DATN.Services.Implementations
 
             
             var totalRevenue = shopOrders
-        .Where(o => o.Status == "Completed")
+        .Where(o => o.Status == "Delivered")
         .Sum(o => o.TotalAmount);
 
             // 5. Đóng gói dữ liệu trả về Controller

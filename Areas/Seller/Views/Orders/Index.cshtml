@@ -1,4 +1,5 @@
-﻿@model DATN.Models.DTOs.PagedResult<DATN.Areas.Admin.Models.DTOs.OrderAdminDto>
+﻿@using DATN.Areas.Seller.Models.DTOs
+@model DATN.Models.DTOs.PagedResult<OrderSelllerDto>
 
 @{
     ViewData["Title"] = "Quản lý đơn hàng";
@@ -11,7 +12,8 @@
     <div class="mb-3 d-flex gap-2">
         <a asp-action="Index" asp-route-status="" class="btn btn-outline-dark btn-sm">Tất cả</a>
         <a asp-action="Index" asp-route-status="Pending" class="btn btn-outline-warning btn-sm">Chờ duyệt</a>
-        <a asp-action="Index" asp-route-status="Confirmed" class="btn btn-outline-primary btn-sm">Đã duyệt</a>
+        <a asp-action="Index" asp-route-status="Shipping" class="btn btn-outline-primary btn-sm">Đang giao</a>
+        <a asp-action="Index" asp-route-status="Delivered" class="btn btn-outline-primary btn-sm">Đã giao</a>
         <a asp-action="Index" asp-route-status="Cancelled" class="btn btn-outline-danger btn-sm">Đã hủy</a>
     </div>
 
@@ -36,7 +38,7 @@
                             <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                             <td class="text-danger fw-bold">@order.TotalAmount.ToString("N0") đ</td>
                             <td class="text-center">
-                                <a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderID" class="btn btn-sm btn-outline-primary">
+                                <a asp-area="Seller" asp-controller="Orders" asp-action="Details" asp-route-id="@order.OrderID" class="btn btn-sm btn-outline-primary">
                                     Duyệt & Xem chi tiết
                                 </a>
                             </td>

@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Đơn hàng của tôi";
+    Layout = "_Layout";
 }
 
 <div class="container mt-4">
@@ -21,7 +22,8 @@
                             <th>Mã đơn hàng</th>
                             <th>Ngày đặt hàng</th>
                             <th>Tổng số tiền</th>
-                            <th class="text-center">Thao tác</th>
+                            <th>Trạng thái</th>
+                            <th class="text-center" colspan="2">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -31,8 +33,20 @@
                                 <td>#@order.OrderID</td>
                                 <td>@order.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td class="text-danger font-weight-bold">@order.TotalAmount.ToString("N0") đ</td>
+                                <td>@order.Status</td>
                                 <td class="text-center">
                                     <a asp-action="Details" asp-route-id="@order.OrderID" class="btn btn-info btn-sm text-white">Xem chi tiết đơn</a>
+                                </td>
+                                <td>
+                                    @if(order.Status == "Pending")
+                                    {
+                                        <div class="d-flex gap-2 mb-3">
+                                            <form asp-action="CancelOrder" asp-route-id="@order.OrderID" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger">Hủy bỏ đơn </button>
+                                            </form>
+                                        </div>
+                                    }
                                 </td>
                             </tr>
                         }

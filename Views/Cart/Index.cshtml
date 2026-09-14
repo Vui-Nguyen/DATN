@@ -75,10 +75,10 @@
                         <h5 class="card-title">Tóm tắt đơn hàng</h5>
                         <hr />
                         <div class="d-flex justify-content-between mb-3">
-                            <span>Tổng tiền thanh toán:</span>
+                            <span>Tổng tiền hàng:</span>
                             <span class="text-danger font-weight-bold fs-5">@Model.Items.Sum(i => i.TotalPrice).ToString("N0") đ</span>
                         </div>
-                        <a asp-action="Checkout" class="btn btn-success w-100 btn-lg">TIẾN HÀNH ĐẶT HÀNG</a>
+                        <a asp-controller="Order" asp-action="CreateOrder" class="btn btn-success w-100 btn-lg">TIẾN HÀNH ĐẶT HÀNG</a>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,195 @@
+﻿@model DATN.Models.ViewModels.CreateOrderViewModel
+
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+}
+
+<div class="container my-4">
+    <h2 class="mb-4">Xác nhận đơn hàng</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <form asp-action="CreateOrder" method="post" class="row">
+        <!-- Cột trái: Địa chỉ và Thông tin người nhận -->
+        <div class="col-md-7">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-primary mb-3">1. Địa chỉ giao hàng</h5>
+
+                    <!-- Input ẩn chứa dữ liệu địa chỉ gửi lên server -->
+                    <input type="hidden" asp-for="AddressId" id="AddressIdHidden" />
+                    <input type="hidden" asp-for="ReceiverName" id="ReceiverNameHidden" />
+                    <input type="hidden" asp-for="Phone" id="PhoneHidden" />
+                    <input type="hidden" asp-for="AddressDetail" id="AddressDetailHidden" />
+                    <div class="mb-3">
+                        <label class="form-label font-weight-bold">Chọn từ sổ địa chỉ</label>
+                        <select class="form-control" id="addressSelect">
+                            @if (Model.UserAddresses != null && Model.UserAddresses.Any())
+                            {
+                                @foreach (var addr in Model.UserAddresses)
+                                {
+                                    <option value="@addr.AddressID"
+                                            data-name="@addr.ReceiverName"
+                                            data-phone="@addr.Phone"
+                                            data-detail="@addr.AddressDetail">
+                                        @addr.ReceiverName - @addr.Phone - @addr.AddressDetail @(addr.IsDefault == true ? "(Mặc định)" : "")
+                                    </option>
+                                }
+                            }
+                            <!-- Thêm option tùy chọn Thêm địa chỉ mới -->
+                            <option value="new" class="text-primary font-weight-bold">+ Thêm địa chỉ mới...</option>
+                        </select>
+                    </div>
+
+                    <hr />
+                    <h6 class="text-secondary mb-3">Thông tin nhận hàng chi tiết</h6>
+
+                    <!-- Các thông tin hiển thị bảo mật, chống người dùng sửa bậy -->
+                    <div class="mb-3">
+                        <label class="form-label">Tên người nhận hàng</label>
+                        <p id="ReceiverNameDisplay" class="form-control-plaintext font-weight-bold text-dark bg-light p-2 rounded border"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại nhận hàng</label>
+                        <p id="PhoneDisplay" class="form-control-plaintext font-weight-bold text-dark bg-light p-2 rounded border"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Chi tiết địa chỉ giao hàng</label>
+                        <p id="AddressDetailDisplay" class="form-control-plaintext font-weight-bold text-dark bg-light p-2 rounded border"></p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Note" class="form-label">Ghi chú đơn hàng</label>
+                        <textarea asp-for="Note" class="form-control" rows="2" placeholder="Lưu ý cho người giao hàng..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-primary mb-3">2. Phương thức thanh toán</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="COD" checked>
+                        <label class="form-check-label">Thanh toán khi nhận hàng (COD)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="Banking">
+                        <label class="form-check-label">Chuyển khoản ngân hàng</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Chi tiết giỏ hàng và Tổng tiền -->
+        <div class="col-md-5">
+            <div class="card shadow-sm sticky-top" style="top: 20px;">
+                <div class="card-body">
+                    <h5 class="card-title text-primary mb-3">3. Sản phẩm trong đơn</h5>
+
+                    @if (Model.CartItems != null && Model.CartItems.Any())
+                    {
+                        <div class="table-responsive mb-3" style="max-height: 250px; overflow-y: auto;">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-center">SL</th>
+                                        <th class="text-end">Tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.CartItems)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 150px;" title="@item.ProductName">@item.ProductName</div>
+                                                <small class="text-muted">@item.Price.ToString("N0") đ</small>
+                                            </td>
+                                            <td class="text-center">@item.Quantity</td>
+                                            <td class="text-end">@((item.Price * item.Quantity).ToString("N0")) đ</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-danger">Giỏ hàng trống.</p>
+                    }
+
+                    <hr />
+
+                    <!-- Input ẩn giữ giá trị phí ship và giảm giá -->
+                    <input type="hidden" asp-for="ShippingFee" />
+                    <input type="hidden" asp-for="DiscountAmount" />
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <strong>@Model.ShippingFee.ToString("N0") đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Giảm giá:</span>
+                        <strong class="text-danger">-@Model.DiscountAmount.ToString("N0") đ</strong>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="h5 font-weight-bold">Tổng thanh toán:</span>
+                        <strong class="h5 text-danger">@Model.TotalAmount.ToString("N0") đ</strong>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg w-100 font-weight-bold">Đặt hàng ngay</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        function handleAddressChange() {
+            var select = document.getElementById('addressSelect');
+            if (!select || select.options.length === 0) return;
+
+            var selectedOption = select.options[select.selectedIndex];
+            var addressId = selectedOption.value;
+
+            if (addressId === 'new') {
+                window.location.href = '@Url.Action("CreateAdd", "Account")';
+                return;
+            }
+
+            var name = selectedOption.getAttribute('data-name') || '';
+            var phone = selectedOption.getAttribute('data-phone') || '';
+            var detail = selectedOption.getAttribute('data-detail') || '';
+
+            // 1. Hiển thị ra màn hình cho người dùng xem
+            document.getElementById('ReceiverNameDisplay').innerText = name;
+            document.getElementById('PhoneDisplay').innerText = phone;
+            document.getElementById('AddressDetailDisplay').innerText = detail;
+
+            // 2. Gán vào input ẩn để gửi dữ liệu lên server thỏa mãn [Required]
+            document.getElementById('AddressIdHidden').value = addressId;
+            document.getElementById('ReceiverNameHidden').value = name;
+            document.getElementById('PhoneHidden').value = phone;
+            document.getElementById('AddressDetailHidden').value = detail;
+        }
+
+        // BẮT BUỘC PHẢI CÓ 2 DÒNG NÀY ĐỂ KÍCH HOẠT HÀM BÊN TRÊN
+        // Chạy khi người dùng đổi địa chỉ khác
+        document.getElementById('addressSelect')?.addEventListener('change', handleAddressChange);
+
+        // Chạy tự động ngay khi vừa load trang để điền sẵn địa chỉ mặc định
+        window.addEventListener('DOMContentLoaded', (event) => {
+            handleAddressChange();
+        });
+    </script>
+}

@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Areas\Admin\Models\DTOs\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\uploads\products\" />
   </ItemGroup>

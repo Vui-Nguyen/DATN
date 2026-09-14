@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DATN.Models.ViewModels;
+using DATN.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
+using YourApp.Services.Implementations;
 
 namespace DATN.Controllers
 {
@@ -10,10 +11,12 @@ namespace DATN.Controllers
     public class OrderController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly ICartService _cartService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, ICartService cartService)
         {
             _orderService = orderService;
+            _cartService = cartService;
         }
 
         private int GetUserId() =>
@@ -35,24 +38,6 @@ namespace DATN.Controllers
             return View(order);
         }
 
-        // POST: /Order/CreateOrder
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOrder(CreateOrderViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return RedirectToAction("Checkout", "Cart");
-
-            var result = await _orderService.CreateAsync(GetUserId(), model);
-            if (!result.Success)
-            {
-                TempData["Error"] = result.Message;
-                return RedirectToAction("Checkout", "Cart");
-            }
-
-            TempData["Success"] = "Đặt hàng thành công!";
-            return RedirectToAction(nameof(Details), new { id = result.OrderId });
-        }
 
         // POST: /Order/CancelOrder/5
         [HttpPost]
@@ -70,6 +55,61 @@ namespace DATN.Controllers
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+        // GET: /Cart/Checkout
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> CreateOrder()
+        {
+            var userId = GetUserId();
+            var cart = await _cartService.GetCartAsync(userId);
+            if (cart == null || !cart.Items.Any())
+            {
+                TempData["Error"] = "Giỏ hàng trống.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var model = await _orderService.BuildCheckoutModelAsync(userId);
+            return View(model);
+        }
+        // POST: /Cart/Checkout
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateOrder(CreateOrderViewModel model)
+        {
+            ModelState.Remove("CartItems");
+            ModelState.Remove("UserAddresses");
+
+            if (!ModelState.IsValid)
+            {
+                
+                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId());
+
+
+                displayModel.AddressId = model.AddressId;
+                displayModel.Note = model.Note;
+                displayModel.PaymentMethod = model.PaymentMethod;
+
+                return View(displayModel);
+            }
+
+            var result = await _orderService.CreateAsync(GetUserId(), model);
+            if (!result.Success)
+            {
+                TempData["Error"] = result.Message;
+
+
+                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId());
+                displayModel.AddressId = model.AddressId;
+                displayModel.Note = model.Note;
+                displayModel.PaymentMethod = model.PaymentMethod;
+
+                return View(displayModel);
+            }
+
+            TempData["Success"] = "Đặt hàng thành công!";
+            return RedirectToAction("Details", "Order", new { id = result.OrderId });
         }
     }
 }
