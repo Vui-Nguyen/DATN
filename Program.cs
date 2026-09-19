@@ -32,6 +32,7 @@ namespace DATN
             builder.Services.AddControllersWithViews();
             builder.Services.AddHttpContextAccessor();
 
+
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString));
@@ -45,6 +46,7 @@ namespace DATN
             builder.Services.AddScoped<IOrderService, OrderService>();
             builder.Services.AddScoped<IReviewService, ReviewService>();
             builder.Services.AddScoped<ISellerService, SellerService>();
+            builder.Services.AddScoped<IVoucherService, VoucherService>();
 
             var app = builder.Build();
 

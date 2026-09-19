@@ -1,0 +1,112 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.ViewModels.VoucherViewModel>
+
+@{
+    ViewData["Title"] = "Quản lý mã giảm giá";
+    Layout = "_SellerLayout";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Quản lý Voucher</h2>
+        <a asp-action="Create" class="btn btn-primary">Thêm Voucher mới</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <table class="table table-striped table-bordered align-middle">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>ID</th>
+                <th>Mã Voucher</th>
+                <th>Giảm giá</th>
+                <th>Ngày bắt đầu</th>
+                <th>Ngày kết thúc</th>
+                <th>Số lượng</th>
+                <th>Trạng thái</th>
+                <th style="width: 160px;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Items != null && Model.Items.Any())
+            {
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td class="text-center"><strong>#@item.VoucherID</strong></td>
+                        <td class="text-center">@item.VoucherCode</td>
+                        <td class="text-center">@item.DiscountPercent %</td>
+                        <td class="text-center">@item.StartDate.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center">@item.EndDate.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center">@item.Quantity</td>
+                        <td class="text-center">
+                            @if (item.IsActive)
+                            {
+                                <span class="badge bg-success">Hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Đã khóa</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <a asp-action="Edit" asp-route-id="@item.VoucherID" class="btn btn-warning btn-sm">Sửa</a>
+
+                            @if (item.IsActive)
+                            {
+                                <form asp-action="Delete" asp-route-id="@item.VoucherID" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn vô hiệu hóa mã [@item.VoucherCode] này không?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="ActivateConfirmed" asp-route-id="@item.VoucherID" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn kích hoạt mã [@item.VoucherCode] này không?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-sm">Kích hoạt</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">Không có voucher nào trong hệ thống.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Thanh phân trang (Pagination) -->
+    @if (Model != null && Model.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <!-- Nút Trang trước -->
+                <li class="page-item @(Model.CurrentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage - 1)">Trang trước</a>
+                </li>
+
+                <!-- Các số trang -->
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-page="@i">@i</a>
+                    </li>
+                }
+
+                <!-- Nút Trang sau -->
+                <li class="page-item @(Model.CurrentPage >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(Model.CurrentPage + 1)">Trang sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

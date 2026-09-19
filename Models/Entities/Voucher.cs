@@ -8,6 +8,7 @@ public partial class Voucher
     public int VoucherId { get; set; }
 
     public string VoucherCode { get; set; } = null!;
+    public bool IsActive { get; set; } = true;
 
     public int? DiscountPercent { get; set; }
 
@@ -17,5 +18,6 @@ public partial class Voucher
 
     public int? Quantity { get; set; }
 
+    public int ShopId { get; set; }
     public virtual ICollection<VoucherUsage> VoucherUsages { get; set; } = new List<VoucherUsage>();
 }

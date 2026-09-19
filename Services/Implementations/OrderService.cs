@@ -72,9 +72,9 @@ namespace DATN.Services.Implementations
             };
         }
 
-        public async Task<CreateOrderViewModel> BuildCheckoutModelAsync(int userId)
+        public async Task<CreateOrderViewModel> BuildCheckoutModelAsync(int userId, int? selectedVoucherId = null)
         {
-            // 1. Lấy danh sách địa chỉ (phần này của bạn đã rất chuẩn)
+            // 1. Lấy danh sách địa chỉ
             var addresses = await _context.Addresses
                 .AsNoTracking()
                 .Where(a => a.UserId == userId)
@@ -90,11 +90,11 @@ namespace DATN.Services.Implementations
 
             var defaultAddress = addresses.FirstOrDefault(a => a.IsDefault == true) ?? addresses.FirstOrDefault();
 
-            // 2. Lấy thêm thông tin giỏ hàng để hiển thị danh sách sản phẩm và tính tiền trên View
+            // 2. Lấy thông tin giỏ hàng (Cần lấy kèm ShopId của sản phẩm để lọc đúng voucher của shop đó)
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
-                .ThenInclude(i => i.Variant)
-                .ThenInclude(v => v.Product) // Nếu cần lấy tên sản phẩm
+                    .ThenInclude(i => i.Variant)
+                        .ThenInclude(v => v.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             var cartItemsDto = cart?.CartItems?.Select(i => new CartItemDto
@@ -102,14 +102,54 @@ namespace DATN.Services.Implementations
                 ProductName = i.Variant?.Product?.ProductName ?? "",
                 VariantID = i.Variant?.VariantId ?? 0,
                 Price = i.Variant?.Price ?? 0,
-                Quantity = i.Quantity
+                Quantity = i.Quantity,
+                ShopId = i.Variant?.Product?.ShopId ?? 0 
             }).ToList() ?? new List<CartItemDto>();
 
             decimal itemsTotal = cartItemsDto.Sum(i => i.Price * i.Quantity);
             decimal shippingFee = 30000; // Phí ship mặc định
-            decimal DiscountAmount = 0; // Hoan thien them
+            decimal discountAmount = 0;
+            string selectedVoucherCode = "";
 
-            // 3. Trả về ViewModel đầy đủ dữ liệu cho View
+            // Lấy danh sách tất cả ShopId có trong giỏ hàng của khách
+            var shopIdsInCart = cartItemsDto.Select(i => i.ShopId).Distinct().ToList();
+
+            // 3. Lấy danh sách Voucher khả dụng của các shop đó (Đang hoạt động, còn hạn, còn số lượng)
+            var now = DateTime.Now;
+            var availableVouchers = await _context.Vouchers
+                .Where(v => shopIdsInCart.Contains(v.ShopId) && v.IsActive && v.Quantity > 0 && v.StartDate <= now && v.EndDate >= now)
+                .Select(v => new VoucherDto
+                {
+                    VoucherID = v.VoucherId,
+                    VoucherCode = v.VoucherCode,
+                    DiscountPercent = v.DiscountPercent,
+                    StartDate = v.StartDate,
+                    EndDate = v.EndDate,
+                    Quantity = v.Quantity,
+                    ShopId = v.ShopId,
+                    IsActive = v.IsActive
+                })
+                .ToListAsync();
+
+            // 4. Xử lý tính tiền giảm giá nếu khách hàng chọn áp dụng Voucher
+            if (selectedVoucherId.HasValue && selectedVoucherId.Value > 0)
+            {
+                var appliedVoucher = availableVouchers.FirstOrDefault(v => v.VoucherID == selectedVoucherId.Value);
+                if (appliedVoucher != null)
+                {
+                    selectedVoucherCode = appliedVoucher.VoucherCode;
+
+                    // Tính số tiền được giảm = (Tổng tiền hàng của shop chứa voucher đó * DiscountPercent) / 100
+                    // Hoặc tính trên tổng đơn hàng nếu voucher áp dụng toàn giỏ hàng của shop
+                    decimal applicableTotal = cartItemsDto
+                        .Where(i => i.ShopId == appliedVoucher.ShopId)
+                        .Sum(i => i.Price * i.Quantity);
+
+                    discountAmount = ((applicableTotal * appliedVoucher.DiscountPercent) / 100) ?? 0;
+                }
+            }
+
+            // 5. Trả về ViewModel đầy đủ dữ liệu
             return new CreateOrderViewModel
             {
                 UserAddresses = addresses,
@@ -119,10 +159,13 @@ namespace DATN.Services.Implementations
                 AddressDetail = defaultAddress?.AddressDetail ?? "",
                 CartItems = cartItemsDto,
                 ShippingFee = shippingFee,
-                DiscountAmount = DiscountAmount,
-                TotalAmount = itemsTotal + shippingFee - DiscountAmount,
+                DiscountAmount = discountAmount,
+                TotalAmount = Math.Max(0, itemsTotal + shippingFee - discountAmount), // Không để tổng tiền âm
+                SelectedVoucherId = selectedVoucherId,
+                SelectedVoucherCode = selectedVoucherCode,
+                AvailableVouchers = availableVouchers
             };
-        }  
+        }
         public async Task<OrderResult> CreateAsync(int userId, CreateOrderViewModel model)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -299,7 +342,6 @@ namespace DATN.Services.Implementations
             return new PagedResult<OrderSelllerDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
         }
 
-        // Đổi hàm Detail phía Admin sang Seller Detail
         public async Task<OrderDetailSellerDto?> GetSellerDetailAsync(int id)
         {
             var order = await _context.Orders

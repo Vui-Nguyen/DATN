@@ -4,6 +4,7 @@ using DATN.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DATN.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914131155_addisactuveforvouchertable")]
+    partial class addisactuveforvouchertable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -527,9 +530,6 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ShopID")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -537,9 +537,6 @@ namespace DATN.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ShopID")
-                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -659,9 +656,6 @@ namespace DATN.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);
-
-                    b.Property<int>("ShopId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime");
@@ -889,19 +883,11 @@ namespace DATN.Migrations
 
             modelBuilder.Entity("DATN.Models.Entities.SellerProfile", b =>
                 {
-                    b.HasOne("DATN.Models.Entities.Shop", "Shop")
-                        .WithOne("SellerProfile")
-                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DATN.Models.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Shop");
 
                     b.Navigation("User");
                 });
@@ -1010,9 +996,6 @@ namespace DATN.Migrations
             modelBuilder.Entity("DATN.Models.Entities.Shop", b =>
                 {
                     b.Navigation("Products");
-
-                    b.Navigation("SellerProfile")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.User", b =>

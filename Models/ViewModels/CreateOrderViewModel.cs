@@ -29,5 +29,8 @@ namespace DATN.Models.ViewModels
         public decimal ShippingFee { get; set; }
         public string PaymentMethod { get; set; }
         public List<CartItemDto> CartItems { get; set; }
+        public int? SelectedVoucherId { get; set; } 
+        public string? SelectedVoucherCode { get; set; }
+        public List<VoucherDto> AvailableVouchers { get; set; } = new List<VoucherDto>();
     }
 }

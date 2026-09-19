@@ -56,10 +56,10 @@ namespace DATN.Controllers
 
             return RedirectToAction(nameof(Details), new { id });
         }
-        // GET: /Cart/Checkout
+        // GET: /Cart/CreateOrder
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> CreateOrder()
+        public async Task<IActionResult> CreateOrder(int? voucherId)
         {
             var userId = GetUserId();
             var cart = await _cartService.GetCartAsync(userId);
@@ -69,23 +69,23 @@ namespace DATN.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var model = await _orderService.BuildCheckoutModelAsync(userId);
+            // Truyền thêm voucherId vào service để tính toán và gán vào model
+            var model = await _orderService.BuildCheckoutModelAsync(userId, voucherId);
             return View(model);
         }
-        // POST: /Cart/Checkout
+
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateOrder(CreateOrderViewModel model)
+        public async Task<IActionResult> CreateOrder(CreateOrderViewModel model, int? voucherId)
         {
             ModelState.Remove("CartItems");
             ModelState.Remove("UserAddresses");
 
             if (!ModelState.IsValid)
             {
-                
-                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId());
-
+                // Khi form lỗi, truyền lại voucherId đang chọn để giữ nguyên trạng thái tính toán
+                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId(), voucherId);
 
                 displayModel.AddressId = model.AddressId;
                 displayModel.Note = model.Note;
@@ -99,8 +99,8 @@ namespace DATN.Controllers
             {
                 TempData["Error"] = result.Message;
 
-
-                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId());
+                // Khi đặt hàng thất bại, build lại model kèm theo voucherId cũ
+                var displayModel = await _orderService.BuildCheckoutModelAsync(GetUserId(), voucherId);
                 displayModel.AddressId = model.AddressId;
                 displayModel.Note = model.Note;
                 displayModel.PaymentMethod = model.PaymentMethod;

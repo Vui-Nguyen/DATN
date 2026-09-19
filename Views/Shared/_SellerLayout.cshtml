@@ -85,12 +85,6 @@
                     <i class="bi bi-box-seam me-2"></i> Quản lý Sản phẩm
                 </a>
 
-                <!-- 3. Quản lý Kho hàng -->
-                <a asp-area="Seller" asp-controller="Inventory" asp-action="Index"
-                   class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inventory" ? "active-menu" : "")">
-                    <i class="bi bi-boxes me-2"></i> Quản lý Kho hàng
-                </a>
-
                 <!-- 4. Quản lý Đơn hàng -->
                 <a asp-area="Seller" asp-controller="Orders" asp-action="Index"
                    class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" ? "active-menu" : "")">
@@ -98,8 +92,8 @@
                 </a>
 
                 <!-- 5. Quản lý Khuyến mãi -->
-                <a asp-area="Seller" asp-controller="Promotions" asp-action="Index"
-                   class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Promotions" ? "active-menu" : "")">
+                <a asp-area="Seller" asp-controller="Voucher" asp-action="Index"
+                   class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Voucher" ? "active-menu" : "")">
                     <i class="bi bi-ticket-perforated me-2"></i> Mã giảm giá & KM
                 </a>
 

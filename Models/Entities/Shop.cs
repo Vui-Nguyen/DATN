@@ -5,6 +5,7 @@ namespace DATN.Models.Entities;
 
 public partial class Shop
 {
+    public SellerProfile SellerProfile { get; set; }
     public int ShopId { get; set; }
 
     public int UserId { get; set; }
