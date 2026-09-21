@@ -14,41 +14,41 @@
     }
 
     <form asp-action="CreateOrder" method="post" class="row">
-        <!-- Input ẩn giữ giá trị voucher đang chọn khi submit form POST -->
-        <input type="hidden" name="voucherId" id="voucherIdHidden" value="@Model.SelectedVoucherId" />
+        <input type="hidden" asp-for="AddressId" id="AddressIdHidden" />
+        <input type="hidden" asp-for="SelectedVoucherId" />
 
-        <!-- Cột trái: Địa chỉ và Thông tin người nhận -->
+        @for (int i = 0; i < Model.SelectedCartItemIds.Count; i++)
+        {
+            <input type="hidden" name="SelectedCartItemIds[@i]" value="@Model.SelectedCartItemIds[i]" />
+        }
+
+        <!-- Cột trái -->
         <div class="col-md-7">
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">1. Địa chỉ giao hàng</h5>
 
-                    <!-- Input ẩn chứa dữ liệu địa chỉ gửi lên server -->
-                    <input type="hidden" asp-for="AddressId" id="AddressIdHidden" />
-                    <input type="hidden" asp-for="ReceiverName" id="ReceiverNameHidden" />
-                    <input type="hidden" asp-for="Phone" id="PhoneHidden" />
-                    <input type="hidden" asp-for="AddressDetail" id="AddressDetailHidden" />
-
                     <div class="mb-3">
-    <label class="form-label font-weight-bold">Chọn từ sổ địa chỉ</label>
-    <select class="form-control" id="addressSelect">
-        @if (Model.UserAddresses != null && Model.UserAddresses.Any())
-        {
-            @foreach (var addr in Model.UserAddresses)
-            {
-                <!option value="@addr.AddressID"
-                        data-name="@addr.ReceiverName"
-                        data-phone="@addr.Phone"
-                        data-detail="@addr.AddressDetail"
-                        @(addr.IsDefault == true ? "selected" : "")>
-                    @addr.ReceiverName - @addr.Phone - @addr.AddressDetail @(addr.IsDefault == true ? "(Mặc định)" : "")
-                </!option>
-            }
-        }
-        <!-- Thêm option tùy chọn Thêm địa chỉ mới -->
-        <option value="new" class="text-primary font-weight-bold">+ Thêm địa chỉ mới...</option>
-    </select>
-</div>
+                        <label class="form-label font-weight-bold">Chọn từ sổ địa chỉ</label>
+                        <select class="form-control" id="addressSelect">
+                            @foreach (var addr in Model.UserAddresses)
+                            {
+                                var isSelected = Model.AddressId > 0
+                                ? addr.AddressID == Model.AddressId
+                                : addr.IsDefault == true;
+
+                                <option value="@addr.AddressID"
+                                        data-name="@addr.ReceiverName"
+                                        data-phone="@addr.Phone"
+                                        data-detail="@addr.AddressDetail"
+                                        selected="@isSelected">
+                                    @addr.ReceiverName - @addr.Phone - @addr.AddressDetail @(addr.IsDefault == true ? "(Mặc định)" : "")
+                                </option>
+                            }
+                            <option value="new" class="text-primary font-weight-bold">+ Thêm địa chỉ mới...</option>
+                        </select>
+                        <span asp-validation-for="AddressId" class="text-danger"></span>
+                    </div>
 
                     <hr />
                     <h6 class="text-secondary mb-3">Thông tin nhận hàng chi tiết</h6>
@@ -75,28 +75,15 @@
 
                     <div class="mb-3">
                         <label class="form-label">Chọn mã giảm giá (Voucher)</label>
-                        <!-- Dùng hàm JS changeVoucher để khi chọn mã sẽ giữ lại cả AddressId đang chọn -->
                         <select id="voucherSelect" class="form-select" onchange="changeVoucher(this.value)">
                             <option value="">-- Không sử dụng voucher --</option>
-                            @if (Model.AvailableVouchers != null)
+                            @foreach (var v in Model.AvailableVouchers)
                             {
-                                @foreach (var v in Model.AvailableVouchers)
-                                {
-                                    if (Model.SelectedVoucherId == v.VoucherID)
-                                    {
-                                        <option value="@v.VoucherID" selected>
-                                            [@v.VoucherCode] Giảm @v.DiscountPercent% (Hạn đến: @v.EndDate?.ToString("dd/MM/yyyy"))
-                                        </option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@v.VoucherID">
-                                            [@v.VoucherCode] Giảm @v.DiscountPercent% (Hạn đến: @v.EndDate?.ToString("dd/MM/yyyy"))
-                                        </option>
-                                    }
-                                }
+                                <option value="@v.VoucherID" selected="@(Model.SelectedVoucherId == v.VoucherID)">
+                                    [@v.VoucherCode] Giảm @v.DiscountPercent% (Hạn đến: @v.EndDate?.ToString("dd/MM/yyyy"))
+                                </option>
                             }
-                        </select>                       
+                        </select>
                     </div>
                 </div>
             </div>
@@ -105,24 +92,25 @@
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">2. Phương thức thanh toán</h5>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="COD" checked>
-                        <label class="form-check-label">Thanh toán khi nhận hàng (COD)</label>
+                        <input class="form-check-input" type="radio" id="pmCOD" asp-for="PaymentMethod" value="COD" />
+                        <label class="form-check-label" for="pmCOD">Thanh toán khi nhận hàng (COD)</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" asp-for="PaymentMethod" value="Banking">
-                        <label class="form-check-label">Chuyển khoản ngân hàng</label>
+                        <input class="form-check-input" type="radio" id="pmBanking" asp-for="PaymentMethod" value="Banking" />
+                        <label class="form-check-label" for="pmBanking">Chuyển khoản ngân hàng</label>
                     </div>
+                    <span asp-validation-for="PaymentMethod" class="text-danger"></span>
                 </div>
             </div>
         </div>
 
-        <!-- Cột phải: Chi tiết giỏ hàng và Tổng tiền -->
+        <!-- Cột phải -->
         <div class="col-md-5">
             <div class="card shadow-sm sticky-top" style="top: 20px;">
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">3. Sản phẩm trong đơn</h5>
 
-                    @if (Model.CartItems != null && Model.CartItems.Any())
+                    @if (Model.CartItems.Any())
                     {
                         <div class="table-responsive mb-3" style="max-height: 250px; overflow-y: auto;">
                             <table class="table table-sm">
@@ -155,11 +143,17 @@
                     }
 
                     <hr />
-                    <div asp-validation-summary="All" class="alert alert-danger" style="width:100%;"></div>
-                    <!-- Input ẩn giữ giá trị phí ship và giảm giá -->
-                    <input type="hidden" asp-for="ShippingFee" />
-                    <input type="hidden" asp-for="DiscountAmount" />
 
+                    @* Chỉ hiện khung lỗi khi thật sự có lỗi *@
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                    }
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tạm tính:</span>
+                        <strong>@Model.ItemsTotal.ToString("N0") đ</strong>
+                    </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Phí vận chuyển:</span>
                         <strong>@Model.ShippingFee.ToString("N0") đ</strong>
@@ -179,58 +173,49 @@
             </div>
         </div>
     </form>
-
 </div>
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
     <script>
+        const selectedCartItemIds = @Json.Serialize(Model.SelectedCartItemIds);
+
         function handleAddressChange() {
-            var select = document.getElementById('addressSelect');
+            const select = document.getElementById('addressSelect');
             if (!select || select.options.length === 0) return;
 
-            var selectedOption = select.options[select.selectedIndex];
-            var addressId = selectedOption.value;
+            const opt = select.options[select.selectedIndex];
 
-            // Nếu người dùng chọn thêm địa chỉ mới
-            if (addressId === 'new') {
+            if (opt.value === 'new') {
                 window.location.href = '@Url.Action("CreateAdd", "Account")';
                 return;
             }
 
-            var name = selectedOption.getAttribute('data-name') || '';
-            var phone = selectedOption.getAttribute('data-phone') || '';
-            var detail = selectedOption.getAttribute('data-detail') || '';
+            document.getElementById('ReceiverNameDisplay').innerText = opt.getAttribute('data-name') || '';
+            document.getElementById('PhoneDisplay').innerText = opt.getAttribute('data-phone') || '';
+            document.getElementById('AddressDetailDisplay').innerText = opt.getAttribute('data-detail') || '';
 
-            // 1. Hiển thị ra màn hình cho người dùng xem
-            document.getElementById('ReceiverNameDisplay').innerText = name;
-            document.getElementById('PhoneDisplay').innerText = phone;
-            document.getElementById('AddressDetailDisplay').innerText = detail;
-
-            // 2. Gán vào input ẩn để gửi dữ liệu lên server thỏa mãn [Required]
-            document.getElementById('AddressIdHidden').value = addressId;
-            document.getElementById('ReceiverNameHidden').value = name;
-            document.getElementById('PhoneHidden').value = phone;
-            document.getElementById('AddressDetailHidden').value = detail;
+            document.getElementById('AddressIdHidden').value = opt.value;
         }
 
-        // Hàm xử lý khi khách hàng chọn/đổi mã Voucher -> reload lại trang để tính lại tiền giảm giá
+        // Đổi voucher: tải lại trang, giữ nguyên sản phẩm đã chọn và địa chỉ đang chọn
         function changeVoucher(voucherId) {
-            var url = '@Url.Action("CreateOrder", "Order")';
-            if (voucherId) {
-                url += '?voucherId=' + voucherId;
-            }
-            window.location.href = url;
-        } 
+            const params = new URLSearchParams();
+            selectedCartItemIds.forEach(id => params.append('selectedCartItemIds', id));
 
-        // Gắn sự kiện chạy khi người dùng đổi địa chỉ khác
+            if (voucherId) params.append('voucherId', voucherId);
+
+            const addressId = document.getElementById('addressSelect').value;
+            if (addressId && addressId !== 'new') params.append('addressId', addressId);
+
+            // Url.Action không chỉ định controller -> dùng đúng controller hiện tại (Cart)
+            window.location.href = '@Url.Action("CreateOrder")?' + params.toString();
+        }
+
         document.getElementById('addressSelect')?.addEventListener('change', handleAddressChange);
-
-        // Chạy tự động ngay khi vừa load trang để điền sẵn địa chỉ mặc định
-        window.addEventListener('DOMContentLoaded', (event) => {
-            handleAddressChange();
-        });
+        document.addEventListener('DOMContentLoaded', handleAddressChange);
     </script>
 }

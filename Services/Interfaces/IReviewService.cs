@@ -6,9 +6,10 @@ namespace DATN.Services.Interfaces
 {
     public interface IReviewService
     {
+        Task<PagedResult<OrderItemDto>> GetDeliveredProductsByUserIdAsync(int userId, int page, int pageSize);
         Task<ReviewDto> GetByIdAsync(int id);
         Task<ServiceResult> CreateAsync(CreateReviewViewModel model);
         Task<ServiceResult> UpdateAsync(int id, EditReviewViewModel model);
-        Task<ServiceResult> DeleteAsync(int id);
+        Task<bool> DeleteAsync(int id);
     }
 }

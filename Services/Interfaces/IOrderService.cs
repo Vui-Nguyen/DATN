@@ -12,7 +12,7 @@ namespace DATN.Services.Interfaces
         Task<OrderDetailDto> GetDetailAsync(int id, int userId);
         Task<OrderResult> CreateAsync(int userId, CreateOrderViewModel model);
         Task<ServiceResult> CancelAsync(int id, int userId);
-        Task<CreateOrderViewModel> BuildCheckoutModelAsync(int userId, int? selectedVoucherId = null);
+        Task<CreateOrderViewModel> BuildCheckoutModelAsync(int userId, List<int> selectedCartItemIds, int? selectedVoucherId = null);
 
         // Seller-side Methods
         Task<OrderDetailSellerDto?> GetSellerDetailAsync(int id);

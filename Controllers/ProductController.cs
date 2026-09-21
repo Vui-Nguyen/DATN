@@ -33,8 +33,6 @@ namespace DATN.Controllers
             return View(product);
         }
 
-        // GET: /Product/Search?keyword=...
-        // GET: /Product/Search?keyword=...
        
         public async Task<IActionResult> Search(string keyword, int page = 1, int pageSize = 12)
         {
@@ -44,15 +42,13 @@ namespace DATN.Controllers
      var products = await _productService.SearchAsync(keyword, page, pageSize); 
    ViewBag.Keyword = keyword; 
 
-    // 2. BỔ SUNG: Nạp lại danh sách tất cả danh mục để thanh Sidebar bên cạnh không bị trống dữ liệu
   var categories = await _categoryService.GetAllAsync();
 ViewBag.Categories = categories;
 
-    // 3. SỬA ĐỔI: Ép buộc Controller hiển thị kết quả bằng giao diện Index.cshtml
     return View("Index", products);
         }
 
-        // GET: /Product/ProductsByCategory/5
+
         public async Task<IActionResult> ProductsByCategory(int categoryId, int page = 1, int pageSize = 12)
         {
             var category = await _categoryService.GetByIdAsync(categoryId);

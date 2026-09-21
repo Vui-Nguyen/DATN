@@ -1,0 +1,103 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.OrderItemDto>
+
+@{
+    ViewData["Title"] = "Sản phẩm đã mua";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <h3 class="mb-4">Danh sách sản phẩm đã mua</h3>
+
+    <!-- Hiển thị thông báo thành công/lỗi nếu có -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Items.Any())
+    {
+        <div class="alert alert-info">Bạn chưa có sản phẩm nào ở trạng thái đã giao hàng (Delivered).</div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Tên sản phẩm (Phân loại)</th>
+                            <th class="text-center">Số lượng</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.ProductName</strong>
+                                </td>
+                                <td class="text-center">@item.Quantity</td>
+                                <td class="text-end">@item.Price.ToString("N0") đ</td>
+                                <td class="text-end text-danger fw-bold">@((item.Quantity * item.Price).ToString("N0")) đ</td>
+                                <td class="text-center">
+                                <td class="text-center">
+                                    @if (item.HasReviewed)
+                                    {
+                                        <span class="badge bg-success mb-1">Đã đánh giá</span>
+                                        <br />
+                                        <div class="d-flex justify-content-center gap-1 mt-1">
+                                            <!-- Nút Sửa -->
+                                            <a asp-controller="Review" asp-action="Edit" asp-route-id="@item.ReviewId" class="btn btn-sm btn-outline-secondary">
+                                                Sửa
+                                            </a>
+
+                                            <!-- Nút Xóa (Dùng form POST kèm AntiForgeryToken bảo mật) -->
+                                            <form asp-controller="Review" asp-action="Delete" asp-route-id="@item.ReviewId" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này không?');" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Review" asp-action="Create" asp-route-variantId="@item.VariantID" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-star"></i> Viết đánh giá
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Thanh phân trang (Pagination) -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-action="DeliveredProducts" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

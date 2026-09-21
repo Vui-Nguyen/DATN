@@ -12,6 +12,7 @@ public partial class Shop
 
     public string ShopName { get; set; } = null!;
 
+    public string AvatarShop { get; set; }
     public string? Description { get; set; }
 
     public DateTime? CreatedAt { get; set; }

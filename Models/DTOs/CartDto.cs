@@ -12,6 +12,8 @@ namespace DATN.Models.DTOs
     {
         public int CartItemID { get; set; }
         public int ShopId { get; set; }
+
+        public string ShopName { get; set; }
         public int VariantID { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public decimal Price { get; set; }

@@ -4,58 +4,108 @@
     ViewData["Title"] = Model.ProductName;
 }
 
-<div class="container mt-5">
+<!-- Nhúng Bootstrap Icons (nếu dự án chưa có) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<div class="container mt-5 mb-5">
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success">@TempData["Success"]</div>
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger">@TempData["Error"]</div>
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     }
 
     <div class="row">
-        <!-- Khu vực hình ảnh -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <img src="@(Model.Images.FirstOrDefault() ?? "/images/default.jpg")" class="img-fluid w-100" id="mainImage" style="max-height: 400px; object-fit: contain;" />
-                <div class="card-footer d-flex gap-2 overflow-auto">
-                    @foreach (var img in Model.Images)
-                    {
-                        <img src="@img" class="img-thumbnail" style="width: 70px; height: 70px; cursor: pointer;" onclick="document.getElementById('mainImage').src='@img'" />
-                    }
+        <!-- Khu vực hình ảnh sản phẩm -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+                <div class="bg-light text-center p-3">
+                    <img src="@(Model.Images?.FirstOrDefault() ?? "/images/default.jpg")" class="img-fluid rounded-3" id="mainImage" style="max-height: 400px; object-fit: contain;" />
                 </div>
+                @if (Model.Images != null && Model.Images.Count > 1)
+                {
+                    <div class="card-footer bg-white d-flex gap-2 overflow-auto py-3">
+                        @foreach (var img in Model.Images)
+                        {
+                            <img src="@img" class="img-thumbnail rounded-3 shadow-sm" style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;" onclick="document.getElementById('mainImage').src='@img'" />
+                        }
+                    </div>
+                }
             </div>
         </div>
 
-        <!-- Khu vực thông tin & đặt hàng -->
+        <!-- Khu vực thông tin sản phẩm & Shop -->
         <div class="col-md-6">
-            <h2 class="mb-2">@Model.ProductName</h2>
-            <p class="text-muted mb-3">Danh mục: <strong>@Model.CategoryName</strong> | Thương hiệu: <strong>@Model.BrandName</strong></p>
-            <hr />
-            <p class="my-4">@Model.Description</p>
+
+            <!-- THÔNG TIN SHOP & NÚT CHAT (Thêm mới) -->
+            <div class="card border shadow-sm rounded-4 p-3 mb-4 bg-light">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <!-- Avatar Shop (Giả định DTO của bạn có ShopAvatar và ShopName, ShopId. Nếu tên thuộc tính ở DTO khác bạn có thể điều chỉnh lại chút cho khớp) -->
+                        <img src="@(!string.IsNullOrEmpty(Model.ShopAvatar) ? Model.ShopAvatar : "/images/default-avatar.png")"
+                             alt="Avatar Shop"
+                             class="rounded-circle border shadow-sm me-3"
+                             style="width: 50px; height: 50px; object-fit: cover;" />
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">@Model.ShopName</h6>
+                            <span class="text-muted small"><i class="bi bi-patch-check-fill text-primary me-1"></i>Cửa hàng chính hãng</span>
+                        </div>
+                    </div>
+                    <div>
+                        <!-- Nút Chat (Chuẩn bị sẵn link dẫn tới trang chat sau này, ví dụ: /Chat?shopId=...) -->
+                        <a href="@Url.Action("Index", "Chat", new { shopId = Model.ShopId })" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
+                            <i class="bi bi-chat-dots-fill me-1"></i> Chat với Shop
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tên sản phẩm -->
+            <h2 class="mb-2 fw-bold text-dark">@Model.ProductName</h2>
+            <p class="text-muted mb-3 small">
+                Danh mục: <span class="text-dark fw-semibold">@Model.CategoryName</span> |
+                Thương hiệu: <span class="text-dark fw-semibold">@Model.BrandName</span>
+            </p>
             <hr />
 
+            <!-- Mô tả sản phẩm -->
+            <p class="text-secondary my-4" style="line-height: 1.6;">@Model.Description</p>
+            <hr />
+
+            <!-- Form Thêm vào giỏ hàng -->
             <form asp-controller="Cart" asp-action="AddToCart" method="post">
                 @Html.AntiForgeryToken()
 
                 <div class="mb-3">
-                    <label class="form-label font-weight-bold">Chọn phân loại sản phẩm:</label>
-                    <select name="variantId" class="form-select" required>
+                    <label class="form-label fw-bold text-dark">Chọn phân loại sản phẩm:</label>
+                    <select name="variantId" class="form-select form-select-lg rounded-3 shadow-sm" required>
                         <option value="">-- Vui lòng chọn phân loại --</option>
-                        @foreach (var variant in Model.Variants)
+                        @if (Model.Variants != null)
                         {
-                            <option value="@variant.VariantID">@variant.VariantName - (@variant.Price.ToString("N0") đ)</option>
+                            @foreach (var variant in Model.Variants)
+                            {
+                                <option value="@variant.VariantID">@variant.VariantName - (@variant.Price.ToString("N0") đ)</option>
+                            }
                         }
                     </select>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label font-weight-bold">Số lượng đặt mua:</label>
-                    <input type="number" name="quantity" class="form-control" value="1" min="1" style="width: 100px;" />
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-dark">Số lượng đặt mua:</label>
+                    <input type="number" name="quantity" class="form-control form-control-lg rounded-3 shadow-sm" value="1" min="1" style="width: 120px;" />
                 </div>
 
-                <button type="submit" class="btn btn-danger btn-lg w-100 mt-3">THÊM VÀO GIỎ HÀNG</button>
+                <button type="submit" class="btn btn-danger btn-lg w-100 rounded-pill shadow py-3 fw-bold">
+                    <i class="bi bi-cart-plus-fill me-2"></i> THÊM VÀO GIỎ HÀNG
+                </button>
             </form>
         </div>
     </div>

@@ -62,6 +62,7 @@ namespace DATN.Services.Implementations
                 PaymentMethod = order.PaymentMethod,
                 Note = order.Note,
                 Status = order.Status,
+                AddressID = order.AddressId,
                 OrderItems = order.OrderItems.Select(i => new OrderItemDto
                 {
                     VariantID = i.VariantId,
@@ -72,192 +73,239 @@ namespace DATN.Services.Implementations
             };
         }
 
-        public async Task<CreateOrderViewModel> BuildCheckoutModelAsync(int userId, int? selectedVoucherId = null)
+        private static readonly string[] AllowedPaymentMethods = { "COD", "Banking" };
+        private const decimal ShippingFeePerOrder = 30000m;
+
+        private static decimal CalculateShippingFee(decimal itemsTotal)
+            => itemsTotal > 0 ? ShippingFeePerOrder : 0m;
+
+        // Tổng tiền hàng mà voucher được phép áp dụng:
+        // voucher của shop nào thì CHỈ giảm trên sản phẩm của shop đó.
+        private static decimal GetEligibleTotal(Voucher voucher, List<CartItem> items)
         {
-            // 1. Lấy danh sách địa chỉ
-            var addresses = await _context.Addresses
-                .AsNoTracking()
-                .Where(a => a.UserId == userId)
-                .Select(a => new AddressDto
-                {
-                    AddressID = a.AddressId,
-                    ReceiverName = a.ReceiverName,
-                    Phone = a.Phone,
-                    AddressDetail = a.AddressDetail,
-                    IsDefault = a.IsDefault
-                })
-                .ToListAsync();
+            var eligible = voucher.ShopId == null
+                ? items
+                : items.Where(i => i.Variant?.Product?.ShopId == voucher.ShopId).ToList();
 
-            var defaultAddress = addresses.FirstOrDefault(a => a.IsDefault == true) ?? addresses.FirstOrDefault();
-
-            // 2. Lấy thông tin giỏ hàng (Cần lấy kèm ShopId của sản phẩm để lọc đúng voucher của shop đó)
-            var cart = await _context.Carts
-                .Include(c => c.CartItems)
-                    .ThenInclude(i => i.Variant)
-                        .ThenInclude(v => v.Product)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
-
-            var cartItemsDto = cart?.CartItems?.Select(i => new CartItemDto
-            {
-                ProductName = i.Variant?.Product?.ProductName ?? "",
-                VariantID = i.Variant?.VariantId ?? 0,
-                Price = i.Variant?.Price ?? 0,
-                Quantity = i.Quantity,
-                ShopId = i.Variant?.Product?.ShopId ?? 0 
-            }).ToList() ?? new List<CartItemDto>();
-
-            decimal itemsTotal = cartItemsDto.Sum(i => i.Price * i.Quantity);
-            decimal shippingFee = 30000; // Phí ship mặc định
-            decimal discountAmount = 0;
-            string selectedVoucherCode = "";
-
-            // Lấy danh sách tất cả ShopId có trong giỏ hàng của khách
-            var shopIdsInCart = cartItemsDto.Select(i => i.ShopId).Distinct().ToList();
-
-            // 3. Lấy danh sách Voucher khả dụng của các shop đó (Đang hoạt động, còn hạn, còn số lượng)
-            var now = DateTime.Now;
-            var availableVouchers = await _context.Vouchers
-                .Where(v => shopIdsInCart.Contains(v.ShopId) && v.IsActive && v.Quantity > 0 && v.StartDate <= now && v.EndDate >= now)
-                .Select(v => new VoucherDto
-                {
-                    VoucherID = v.VoucherId,
-                    VoucherCode = v.VoucherCode,
-                    DiscountPercent = v.DiscountPercent,
-                    StartDate = v.StartDate,
-                    EndDate = v.EndDate,
-                    Quantity = v.Quantity,
-                    ShopId = v.ShopId,
-                    IsActive = v.IsActive
-                })
-                .ToListAsync();
-
-            // 4. Xử lý tính tiền giảm giá nếu khách hàng chọn áp dụng Voucher
-            if (selectedVoucherId.HasValue && selectedVoucherId.Value > 0)
-            {
-                var appliedVoucher = availableVouchers.FirstOrDefault(v => v.VoucherID == selectedVoucherId.Value);
-                if (appliedVoucher != null)
-                {
-                    selectedVoucherCode = appliedVoucher.VoucherCode;
-
-                    // Tính số tiền được giảm = (Tổng tiền hàng của shop chứa voucher đó * DiscountPercent) / 100
-                    // Hoặc tính trên tổng đơn hàng nếu voucher áp dụng toàn giỏ hàng của shop
-                    decimal applicableTotal = cartItemsDto
-                        .Where(i => i.ShopId == appliedVoucher.ShopId)
-                        .Sum(i => i.Price * i.Quantity);
-
-                    discountAmount = ((applicableTotal * appliedVoucher.DiscountPercent) / 100) ?? 0;
-                }
-            }
-
-            // 5. Trả về ViewModel đầy đủ dữ liệu
-            return new CreateOrderViewModel
-            {
-                UserAddresses = addresses,
-                AddressId = defaultAddress?.AddressID ?? 0,
-                ReceiverName = defaultAddress?.ReceiverName ?? "",
-                Phone = defaultAddress?.Phone ?? "",
-                AddressDetail = defaultAddress?.AddressDetail ?? "",
-                CartItems = cartItemsDto,
-                ShippingFee = shippingFee,
-                DiscountAmount = discountAmount,
-                TotalAmount = Math.Max(0, itemsTotal + shippingFee - discountAmount), // Không để tổng tiền âm
-                SelectedVoucherId = selectedVoucherId,
-                SelectedVoucherCode = selectedVoucherCode,
-                AvailableVouchers = availableVouchers
-            };
+            return eligible.Sum(i => i.Quantity * (i.Variant?.Price ?? 0));
         }
+
+        // Kiểm tra voucher + tính tiền giảm (tính ở server, không tin client)
+        private async Task<(Voucher? Voucher, decimal Discount, string? Error)> ApplyVoucherAsync(
+            int? voucherId, List<CartItem> items)
+        {
+            if (voucherId is null or <= 0)
+                return (null, 0m, null);
+
+            var now = DateTime.Now;
+            var voucher = await _context.Vouchers.FirstOrDefaultAsync(v =>
+                v.VoucherId == voucherId.Value
+                && v.Quantity > 0
+                && (v.StartDate == null || v.StartDate <= now)
+                && (v.EndDate == null || v.EndDate >= now));
+
+            if (voucher == null)
+                return (null, 0m, "Voucher không hợp lệ, đã hết hạn hoặc hết lượt sử dụng.");
+
+            var eligibleTotal = GetEligibleTotal(voucher, items);
+            if (eligibleTotal <= 0)
+                return (null, 0m, "Voucher không áp dụng cho các sản phẩm đã chọn.");
+
+            var discount = Math.Round((eligibleTotal * (voucher.DiscountPercent ?? 0m)) / 100m, 0);
+            return (voucher, discount, null);
+        }
+
+        // Dựng dữ liệu cho trang thanh toán: CHỈ gồm các sản phẩm được chọn
+        public async Task<CreateOrderViewModel> BuildCheckoutModelAsync(
+            int userId, List<int> selectedCartItemIds, int? voucherId)
+        {
+            selectedCartItemIds ??= new List<int>();
+
+            var model = new CreateOrderViewModel
+            {
+                SelectedCartItemIds = selectedCartItemIds
+            };
+
+            // 1. Sản phẩm được chọn (phải thuộc giỏ hàng của user)
+            var items = await _context.CartItems
+                .Include(i => i.Variant).ThenInclude(v => v.Product)
+                .Where(i => i.Cart.UserId == userId && selectedCartItemIds.Contains(i.CartItemId))
+                .ToListAsync();
+
+            model.CartItems = items.Select(i => new CartItemDto
+            {
+                ProductName = i.Variant?.Product?.ProductName ?? string.Empty,
+                Price = i.Variant?.Price ?? 0,
+                Quantity = i.Quantity
+            }).ToList();
+
+            model.ItemsTotal = items.Sum(i => i.Quantity * (i.Variant?.Price ?? 0));
+
+            // 2. Sổ địa chỉ
+            var addresses = await _context.Addresses
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.IsDefault)
+                .ToListAsync();
+
+            model.UserAddresses = addresses.Select(a => new AddressDto
+            {
+                AddressID = a.AddressId,
+                ReceiverName = a.ReceiverName,
+                Phone = a.Phone,
+                AddressDetail = a.AddressDetail,
+                IsDefault = a.IsDefault
+            }).ToList();
+
+            var defaultAddr = addresses.FirstOrDefault(a => a.IsDefault == true) ?? addresses.FirstOrDefault();
+            model.AddressId = defaultAddr?.AddressId ?? 0;
+
+            // 3. Voucher: chỉ lấy voucher còn dùng được VÀ thuộc shop có sản phẩm trong đơn
+            var shopIds = items
+                .Select(i => (int?)i.Variant?.Product?.ShopId)
+                .Distinct()
+                .ToList();
+
+            var now = DateTime.Now;
+            var vouchers = await _context.Vouchers
+                .Where(v => v.Quantity > 0
+                         && (v.StartDate == null || v.StartDate <= now)
+                         && (v.EndDate == null || v.EndDate >= now)
+                         && (v.ShopId == null || shopIds.Contains(v.ShopId)))
+                .ToListAsync();
+
+            model.AvailableVouchers = vouchers.Select(v => new VoucherDto
+            {
+                VoucherID = v.VoucherId,
+                VoucherCode = v.VoucherCode,
+                DiscountPercent = v.DiscountPercent,
+                EndDate = v.EndDate
+            }).ToList();
+
+            // 4. Áp voucher đang chọn (không hợp lệ thì bỏ qua khi chỉ hiển thị)
+            var (voucher, discount, _) = await ApplyVoucherAsync(voucherId, items);
+            model.SelectedVoucherId = voucher?.VoucherId;
+            model.SelectedVoucherCode = voucher?.VoucherCode;
+            model.DiscountAmount = discount;
+
+            // 5. Tổng tiền
+            model.ShippingFee = CalculateShippingFee(model.ItemsTotal);
+            model.TotalAmount = Math.Max(0, model.ItemsTotal + model.ShippingFee - model.DiscountAmount);
+
+            return model;
+        }
+
+        // Tạo đơn hàng
         public async Task<OrderResult> CreateAsync(int userId, CreateOrderViewModel model)
         {
+            // 0. Kiểm tra đầu vào
+            if (!AllowedPaymentMethods.Contains(model.PaymentMethod))
+                return new OrderResult { Success = false, Message = "Phương thức thanh toán không hợp lệ." };
+
+            if (model.SelectedCartItemIds == null || !model.SelectedCartItemIds.Any())
+                return new OrderResult { Success = false, Message = "Không có sản phẩm nào được chọn để thanh toán." };
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-
-                int addressIdToUse = model.AddressId;
-
-                if (addressIdToUse <= 0)
+                // 1. Địa chỉ
+                Address? address;
+                if (model.AddressId > 0)
                 {
-                    // Nếu user không chọn trên form, lấy địa chỉ mặc định
-                    var defaultAddress = await _context.Addresses
-                        .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault == true);
+                    address = await _context.Addresses
+                        .FirstOrDefaultAsync(a => a.AddressId == model.AddressId && a.UserId == userId);
 
-                    if (defaultAddress == null)
-                        return new OrderResult { Success = false, Message = "Vui lòng thiết lập hoặc chọn địa chỉ giao hàng." };
-
-                    addressIdToUse = defaultAddress.AddressId;
+                    if (address == null)
+                        return new OrderResult { Success = false, Message = "Địa chỉ giao hàng không hợp lệ." };
                 }
                 else
                 {
-                    var isValidAddress = await _context.Addresses
-                        .AnyAsync(a => a.AddressId == addressIdToUse && a.UserId == userId);
+                    address = await _context.Addresses
+                        .FirstOrDefaultAsync(a => a.UserId == userId && a.IsDefault == true);
 
-                    if (!isValidAddress)
-                        return new OrderResult { Success = false, Message = "Địa chỉ giao hàng không hợp lệ." };
+                    if (address == null)
+                        return new OrderResult { Success = false, Message = "Vui lòng thiết lập hoặc chọn địa chỉ giao hàng." };
                 }
 
+                // 2. Các sản phẩm được chọn
+                var selectedItems = await _context.CartItems
+                    .Include(i => i.Variant).ThenInclude(v => v.Product)
+                    .Where(i => i.Cart.UserId == userId && model.SelectedCartItemIds.Contains(i.CartItemId))
+                    .ToListAsync();
 
-                var cart = await _context.Carts
-                    .Include(c => c.CartItems)
-                    .ThenInclude(i => i.Variant)
-                    .FirstOrDefaultAsync(c => c.UserId == userId);
+                if (!selectedItems.Any())
+                    return new OrderResult { Success = false, Message = "Không có sản phẩm nào được chọn để thanh toán." };
 
-                if (cart == null || !cart.CartItems.Any())
-                    return new OrderResult { Success = false, Message = "Giỏ hàng của bạn đang trống." };
+                // 3. Kiểm tra kho TRƯỚC khi tạo đơn
+                var outOfStock = selectedItems.FirstOrDefault(i => i.Variant == null || i.Variant.Stock < i.Quantity);
+                if (outOfStock != null)
+                    return new OrderResult
+                    {
+                        Success = false,
+                        Message = $"Sản phẩm {outOfStock.Variant?.Product?.ProductName} không đủ số lượng trong kho."
+                    };
 
-                // 2. Tính tiền chuẩn xác (bao gồm cả ship và giảm giá nếu có)
-                decimal itemsTotal = cart.CartItems.Sum(i => i.Quantity * (i.Variant != null ? i.Variant.Price : 0));
-                decimal totalAmount = itemsTotal + model.ShippingFee - model.DiscountAmount;
+                // 4. Tính tiền hoàn toàn ở server
+                decimal itemsTotal = selectedItems.Sum(i => i.Quantity * i.Variant!.Price);
+                decimal shippingFee = CalculateShippingFee(itemsTotal);
 
-                // 1. Tạo bản ghi đơn hàng 
+                var (voucher, discount, voucherError) = await ApplyVoucherAsync(model.SelectedVoucherId, selectedItems);
+                if (voucherError != null)
+                    return new OrderResult { Success = false, Message = voucherError };
+
+                decimal totalAmount = Math.Max(0, itemsTotal + shippingFee - discount);
+
+                // 5. Tạo đơn hàng
                 var order = new Order
                 {
                     UserId = userId,
-                    AddressId = addressIdToUse, 
+                    AddressId = address.AddressId,
                     OrderDate = DateTime.Now,
-                    DiscountAmount = model.DiscountAmount,
-                    Note = model.Note, 
-                    PaymentMethod = model.PaymentMethod,
-                    ShippingFee = model.ShippingFee,
+                    DiscountAmount = discount,
+                    ShippingFee = shippingFee,
                     TotalAmount = totalAmount,
+                    Note = model.Note,
+                    PaymentMethod = model.PaymentMethod,
                     Status = "Pending"
-                    
                 };
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
-                // 2. Chuyển đổi CartItems thành OrderItems 
-                foreach (var item in cart.CartItems)
+                // 6. Chi tiết đơn + trừ kho
+                foreach (var item in selectedItems)
                 {
-                    if (item.Variant == null || item.Variant.Stock < item.Quantity)
-                    {
-                        await transaction.RollbackAsync();
-                        return new OrderResult { Success = false, Message = $"Sản phẩm không đủ số lượng trong kho." };
-                    }
+                    item.Variant!.Stock -= item.Quantity;
 
-                    // Trừ kho
-                    item.Variant.Stock -= item.Quantity;
                     _context.OrderItems.Add(new OrderItem
                     {
                         OrderId = order.OrderId,
                         VariantId = item.VariantId,
                         Quantity = item.Quantity,
-                        UnitPrice = item.Variant?.Price ?? 0
+                        UnitPrice = item.Variant.Price
                     });
                 }
 
-                // 3. Xóa các mặt hàng trong giỏ sau khi đặt hàng
-                _context.CartItems.RemoveRange(cart.CartItems);
-                await _context.SaveChangesAsync();
+                // 7. Trừ lượt voucher
+                if (voucher != null)
+                    voucher.Quantity -= 1;
 
+                // 8. Xoá khỏi giỏ hàng các sản phẩm đã mua 
+                _context.CartItems.RemoveRange(selectedItems);
+
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
                 return new OrderResult { Success = true, OrderId = order.OrderId };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return new OrderResult { Success = false, Message = "Đã xảy ra lỗi trong quá trình xử lý đơn hàng: " + ex.Message };
+                return new OrderResult
+                {
+                    Success = false,
+                    Message = "Đã xảy ra lỗi trong quá trình xử lý đơn hàng: " + ex.Message
+                };
             }
         }
-
         public async Task<ServiceResult> CancelAsync(int id, int userId)
         {
             // 1. Tìm đơn hàng kèm theo các sản phẩm trong đơn (OrderItems) để hoàn kho
@@ -279,11 +327,11 @@ namespace DATN.Services.Implementations
                 var variant = await _context.ProductVariants.FindAsync(item.VariantId);
                 if (variant != null)
                 {
-                    variant.Stock += item.Quantity; // Cộng ngược số lượng tồn kho của biến thể
+                    variant.Stock += item.Quantity; 
                 }
             }
 
-            // 4. Cập nhật trạng thái đơn hàng thành Cancelled (hoặc cập nhật trực tiếp trên bảng Order)
+            // 4. Cập nhật trạng thái đơn hàng thành Cancelled 
             order.Status = "Cancelled";
 
             // 5. Thêm lịch sử thay đổi trạng thái

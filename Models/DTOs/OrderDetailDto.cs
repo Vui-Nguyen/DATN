@@ -6,6 +6,7 @@ namespace DATN.Models.DTOs
 
     public class OrderDetailDto
     {
+        public int AddressID { get; set; } = 0;
         public int OrderID { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
@@ -25,6 +26,10 @@ namespace DATN.Models.DTOs
         public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal Price { get; set; }
+
+
+        public bool HasReviewed { get; set; }
+        public int? ReviewId { get; set; }
     }
 
   

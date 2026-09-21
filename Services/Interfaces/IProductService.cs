@@ -9,13 +9,13 @@ namespace DATN.Services.Interfaces
 {
     public interface IProductService
     {
-        // Client-side Methods
+
         Task<PagedResult<ProductDto>> GetAllAsync(int page, int pageSize);
         Task<ProductDetailDto> GetDetailAsync(int id);
         Task<PagedResult<ProductDto>> SearchAsync(string keyword, int page, int pageSize);
         Task<PagedResult<ProductDto>> GetByCategoryAsync(int categoryId, int page, int pageSize);
 
-        // Admin-side Methods
+        Task<int> GetProductIdByVariantIdAsync(int variantId);
         Task<PagedResult<ProductDto>> GetAllSellerAsync(int page);
         Task<ProductViewModel> GetForEditAsync(int id);
         Task<ServiceResult> CreateAsync(ProductViewModel model, List<IFormFile>? images);

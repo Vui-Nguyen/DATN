@@ -118,7 +118,7 @@ namespace DATN.Services.Implementations
             }
             catch (Exception ex)
             {
-                // Bắt lỗi khi lưu DB (ví dụ: tràn dữ liệu, lỗi ràng buộc, mất kết nối...)
+
                 return new ServiceResult { Success = false, Message = $"Lỗi khi lưu cơ sở dữ liệu: {ex.Message}" };
             }
         }

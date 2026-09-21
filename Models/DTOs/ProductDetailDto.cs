@@ -5,6 +5,8 @@ namespace DATN.Models.DTOs
     public class ProductDetailDto
     {
         public string ShopName { get; set; } = string.Empty;
+        public string? ShopAvatar { get; set; }
+        public int ShopId { get; set; }
         public int? ProductID { get; set; }
         public int? CategoryID { get; set; }
         public int? BrandID { get; set; }

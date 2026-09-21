@@ -6,7 +6,7 @@ using DATN.Models.DTOs;
 using DATN.Models.Entities;
 using DATN.Services;
 using DATN.Services.Interfaces;
-using Microsoft.AspNetCore.Hosting; // Thêm thư viện này cho IWebHostEnvironment
+using Microsoft.AspNetCore.Hosting; 
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -30,6 +30,12 @@ namespace DATN.Services.Implementations
             _httpContextAccessor = httpContextAccessor;
         }
 
+        public async Task<int> GetProductIdByVariantIdAsync(int variantId)
+        {
+
+            var variant = await _context.ProductVariants.FindAsync(variantId);
+            return variant != null ? variant.ProductId : 0;
+        }
         public async Task<PagedResult<ProductDto>> GetAllAsync(int page, int pageSize)
         {
             var query = _context.Products
@@ -45,7 +51,6 @@ namespace DATN.Services.Implementations
                 {
                     ProductID = p.ProductId,
                     ProductName = p.ProductName,
-                    // Lấy giá Min từ Variants, dùng null-conditional ngắn gọn
                     Price = p.ProductVariants.Min(v => (decimal?)v.Price) ?? 0,
                     ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg"
                 }).ToListAsync();
@@ -71,12 +76,14 @@ namespace DATN.Services.Implementations
                 ProductID = product.ProductId,
                 ProductName = product.ProductName,
                 Description = product.Description,
-                CategoryID = product.CategoryId, // Thêm ID danh mục nếu cần dùng lại ở trang Chi tiết/Sửa
-                BrandID = product.BrandId,       // Thêm ID thương hiệu
+                CategoryID = product.CategoryId, 
+                BrandID = product.BrandId,       
                 CategoryName = product.Category?.CategoryName ?? "Không có",
                 BrandName = product.Brand?.BrandName ?? "Không có",
                 ShopName = product.Shop?.ShopName ?? "Không xác định",
-                CreatedAt = product.CreatedAt,   // Thêm ngày đăng sản phẩm
+                ShopAvatar = product.Shop?.AvatarShop ?? "/images/default-shop.jpg",
+                ShopId = product.ShopId,
+                CreatedAt = product.CreatedAt,   
                 Images = product.ProductImages.Select(img => img.ImageUrl).ToList(),
                 Variants = product.ProductVariants.Select(v => new VariantDto
                 {
@@ -215,19 +222,19 @@ namespace DATN.Services.Implementations
                     return new ServiceResult { Success = false, Message = "Sản phẩm không tồn tại." };
                 }
 
-                // Kiểm tra xem có nhập ít nhất 1 biến thể nào không
+
                 if (model.Variants == null || model.Variants.Count == 0)
                 {
                     return new ServiceResult { Success = false, Message = "Vui lòng nhập ít nhất một phân loại sản phẩm." };
                 }
 
-                // 1. Cập nhật thông tin cơ bản
+
                 product.ProductName = model.ProductName;
                 product.Description = model.Description;
                 product.CategoryId = model.CategoryID;
                 product.BrandId = model.BrandID == 0 ? null : model.BrandID;
 
-                // 2. Cập nhật danh sách Variants (Xóa toàn bộ variants cũ, thêm mới các variants từ form gửi lên)
+
                 _context.ProductVariants.RemoveRange(product.ProductVariants);
                 foreach (var v in model.Variants)
                 {
@@ -240,14 +247,14 @@ namespace DATN.Services.Implementations
                     });
                 }
 
-                // 3. Xử lý Hình ảnh (Giữ lại ảnh có trong ExistingImages, xóa ảnh bị gỡ khỏi giao diện và thêm ảnh mới upload)
+
                 var imagesToRemove = product.ProductImages
                     .Where(img => model.ExistingImages == null || !model.ExistingImages.Contains(img.ImageUrl))
                     .ToList();
 
                 if (imagesToRemove.Any())
                 {
-                    // Xóa file vật lý trên ổ cứng nếu muốn tối ưu dung lượng server
+
                     foreach (var img in imagesToRemove)
                     {
                         var filePath = Path.Combine(_env.WebRootPath, img.ImageUrl.TrimStart('/'));
@@ -333,7 +340,6 @@ namespace DATN.Services.Implementations
             _context.ProductVariants.Add(variant);
         }
 
-        // BẮT BUỘC: Lưu thay đổi lần 1 để database cấp phát ProductId thật
         await _context.SaveChangesAsync();
 
         // 3. Xử lý lưu ảnh nếu có
@@ -383,7 +389,7 @@ namespace DATN.Services.Implementations
                     return new ServiceResult { Success = false, Message = "Không tìm thấy sản phẩm hoặc bạn không có quyền xóa sản phẩm này." };
                 }
 
-                // 3. Thực hiện Xóa mềm (Đổi trạng thái IsDeleted thành true)
+                // 3. Thực hiện Xóa mềm 
                 product.IsDeleted = true;
 
                 _context.Products.Update(product);
@@ -398,7 +404,7 @@ namespace DATN.Services.Implementations
             }
         }
 
-        // ĐÃ SỬA: Bảo mật đuôi file, dùng chung _env.WebRootPath
+
         private async Task SaveProductImagesAsync(int productId, List<IFormFile> images)
         {
             var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "products");
@@ -413,7 +419,7 @@ namespace DATN.Services.Implementations
                 {
                     var extension = Path.GetExtension(file.FileName).ToLower();
 
-                    // Kiểm tra bảo mật: Bỏ qua nếu không phải file ảnh
+                    // Kiểm tra bảo mật
                     if (!allowedExtensions.Contains(extension)) continue;
 
                     var fileName = Guid.NewGuid().ToString() + extension;

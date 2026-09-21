@@ -2,6 +2,7 @@
 @model OrderDetailDto
 
 @{
+    var address = ViewBag.Address as string ?? "Chưa có địa chỉ giao hàng";
     ViewData["Title"] = "Chi tiết hóa đơn đơn hàng";
     Layout = "_Layout"; 
 }
@@ -26,6 +27,9 @@
             <p>Phương thức thanh toán: <strong>@(Model.PaymentMethod ?? "COD")</strong></p>
             <p>Phí vận chuyển: <strong>@Model.ShippingFee.ToString("N0") đ</strong></p>
             <p>Số tiền giảm giá (Voucher): <strong>@Model.DiscountAmount.ToString("N0") đ</strong></p>
+            <p>
+                Địa chỉ giao hàng: @address
+            </p>
 
             @if (!string.IsNullOrEmpty(Model.Note))
             {

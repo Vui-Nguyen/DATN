@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using DATN.Models.ViewModels;
+using DATN.Services.Implementations;
+using DATN.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using DATN.Services.Interfaces;
-using DATN.Models.ViewModels;
 
 namespace DATN.Controllers
 {
@@ -10,15 +11,42 @@ namespace DATN.Controllers
     public class ReviewController : Controller
     {
         private readonly IReviewService _reviewService;
+        private readonly IProductService _productService;
 
-        public ReviewController(IReviewService reviewService)
+        public ReviewController(IReviewService reviewService, IProductService productService)
         {
             _reviewService = reviewService;
+            _productService = productService;
         }
 
         private int GetUserId() =>
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        // GET: /Review/Create?variantId=10
+        [HttpGet]
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
+        {
+            int userId = GetUserId(); 
+            var result = await _reviewService.GetDeliveredProductsByUserIdAsync(userId, page, pageSize);
+            return View(result);
+        }
+        [HttpGet]
+        public async Task<IActionResult> Create(int variantId)
+        {
+            int productId = await _productService.GetProductIdByVariantIdAsync(variantId);
 
+            if (productId == 0) 
+            {
+                TempData["Error"] = "Không tìm thấy sản phẩm tương ứng.";
+                return RedirectToAction("MyOrders", "Order");
+            }
+
+            var model = new CreateReviewViewModel
+            {
+                ProductId = productId, 
+            };
+
+            return View(model);
+        }
         // POST: /Review/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -38,7 +66,7 @@ namespace DATN.Controllers
             else
                 TempData["Success"] = "Đánh giá của bạn đã được gửi.";
 
-            return RedirectToAction("Details", "Product", new { id = model.ProductId });
+            return RedirectToAction("Index", "Review");
         }
 
         // GET: /Review/Edit/5
@@ -49,8 +77,13 @@ namespace DATN.Controllers
 
             if (review.UserID != GetUserId())
                 return Forbid();
-
-            return View(review);
+            var model = new EditReviewViewModel
+            {
+                Rating = review.Rating,
+                Comment = review.Comment,
+               
+            };
+            return View(model);
         }
 
         // POST: /Review/Edit/5
@@ -73,7 +106,7 @@ namespace DATN.Controllers
             }
 
             TempData["Success"] = "Cập nhật đánh giá thành công.";
-            return RedirectToAction("Details", "Product", new { id = review.ProductID });
+            return RedirectToAction("Index", "Review");
         }
 
         // POST: /Review/Delete/5
@@ -87,7 +120,7 @@ namespace DATN.Controllers
 
             await _reviewService.DeleteAsync(id);
             TempData["Success"] = "Đã xóa đánh giá.";
-            return RedirectToAction("Details", "Product", new { id = review.ProductID });
+            return RedirectToAction("Index", "Review");
         }
     }
 }

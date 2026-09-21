@@ -24,6 +24,7 @@ namespace YourApp.Services.Implementations
                 .Include(c => c.CartItems)
                 .ThenInclude(i => i.Variant)
                 .ThenInclude(v => v.Product)
+                .ThenInclude(p => p.Shop)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (cart == null)
@@ -42,7 +43,9 @@ namespace YourApp.Services.Implementations
                     VariantID = i.VariantId,
                     ProductName = i.Variant?.Product?.ProductName + " - " + i.Variant?.VariantName,
                     Price = i.Variant != null ? i.Variant.Price : 0,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
+                    ShopId = i.Variant?.Product?.ShopId ?? 0,
+                    ShopName = i.Variant?.Product?.Shop?.ShopName ?? "Cửa hàng" 
                 }).ToList()
             };
         }

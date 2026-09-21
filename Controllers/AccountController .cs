@@ -85,7 +85,6 @@ namespace DATN.Controllers
             };
             if (user.RoleName == "Seller")
             {
-                // Ví dụ: truy vấn tìm ShopId dựa vào UserID của người bán
                 var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == user.UserID);
 
                 if (shop != null)
@@ -208,18 +207,17 @@ namespace DATN.Controllers
                 return View(model);
             }
 
-            // 1. Lấy chuỗi ID từ Claims (thường được lưu dưới dạng NameIdentifier)
-            // Nếu lúc đăng nhập bạn dùng custom claim tên "UserId", hãy đổi thành: User.FindFirstValue("UserId")
+            // 1. Lấy chuỗi ID từ Claims
             string userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             // 2. Kiểm tra và ép kiểu sang int
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int userId))
             {
-                // Nếu dùng [Authorize] ở trên, đoạn redirect này có thể bỏ đi vì hệ thống đã tự lo
+             
                 return RedirectToAction("Login", "Account");
             }
 
-            // 3. Truyền userId thẳng vào service (không cần .Value nữa vì biến userId giờ là kiểu int, không phải int?)
+            // 3. Truyền userId thẳng vào service
             var result = await _sellerService.RegisterSellerAsync(userId, model);
 
             if (!result.Success)
@@ -243,12 +241,10 @@ namespace DATN.Controllers
             return View(model);
         }
 
-        // 2. HTTP POST: Nhận dữ liệu từ form khi người dùng bấm nút Lưu
         [HttpPost]
         [ValidateAntiForgeryToken] // Bảo vệ chống tấn công CSRF
         public async Task<IActionResult> CreateAdd(AddressViewModel model)
         {
-            // Fix lỗi 1: Dùng TryParse để tránh crash nếu user chưa đăng nhập
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int currentUserId) || currentUserId == 0)
             {
                 return RedirectToAction("Login", "Account");
@@ -269,7 +265,6 @@ namespace DATN.Controllers
                 if (isSuccess)
                 {
                     TempData["SuccessMessage"] = "Thêm địa chỉ mới thành công!";
-                    // Fix lỗi 2: Trỏ đúng tên action AddressReview thay vì Index
                     return RedirectToAction("AddressReview");
                 }
                 else

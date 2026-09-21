@@ -1,0 +1,55 @@
+﻿@model DATN.Models.ViewModels.CreateReviewViewModel
+
+@{
+    ViewData["Title"] = "Viết đánh giá sản phẩm";
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">Đánh giá sản phẩm</h2>
+
+                    <form asp-controller="Review" asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Truyền ProductId ngầm -->
+                        <input type="hidden" asp-for="ProductId" />
+
+                        <div class="mb-3">
+                            <label asp-for="Rating" class="form-label">Mức độ hài lòng (Số sao)</label>
+                            <select asp-for="Rating" class="form-select" required>
+                                <option value="">-- Chọn số sao --</option>
+                                <option value="5">5 Sao - Tuyệt vời</option>
+                                <option value="4">4 Sao - Hài lòng</option>
+                                <option value="3">3 Sao - Bình thường</option>
+                                <option value="2">2 Sao - Không hài lòng</option>
+                                <option value="1">1 Sao - Rất tệ</option>
+                            </select>
+                            <span asp-validation-for="Rating" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Comment" class="form-label">Nhận xét của bạn</label>
+                            <textarea asp-for="Comment" class="form-control" rows="4" required placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."></textarea>
+                            <span asp-validation-for="Comment" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+                            <a asp-controller="Product" asp-action="Details" asp-route-id="@Model.ProductId" class="btn btn-secondary">Quay lại sản phẩm</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

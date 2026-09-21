@@ -47,6 +47,7 @@ namespace DATN
             builder.Services.AddScoped<IReviewService, ReviewService>();
             builder.Services.AddScoped<ISellerService, SellerService>();
             builder.Services.AddScoped<IVoucherService, VoucherService>();
+            builder.Services.AddScoped<IShopService, ShopService>();
 
             var app = builder.Build();
 

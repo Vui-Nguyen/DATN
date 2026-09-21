@@ -31,16 +31,14 @@ namespace DATN.Services.Implementations
                     return new ServiceResult { Success = false, Message = "Không tìm thấy hồ sơ người bán." };
                 }
 
-                // 1. Cập nhật trạng thái hồ sơ thành đã duyệt
                 profile.Status = 1;
 
-                // 2. Nâng quyền User lên Seller (RoleID = 2)
+
                 if (profile.User != null)
                 {
                     profile.User.RoleId = 2;
                 }
 
-                // 3. Tự động khởi tạo Shop mới gắn với UserID này
                 var shop = new Shop
                 {
                     IsLocked = false,
@@ -77,7 +75,6 @@ namespace DATN.Services.Implementations
 
                     if (daysSinceRequest >= 30)
                     {
-                        // Nếu đã đủ 30 ngày, xóa bản ghi cũ đi
                         _context.SellerProfiles.Remove(existingRequest);
                         await _context.SaveChangesAsync();
 
@@ -132,7 +129,6 @@ namespace DATN.Services.Implementations
             }
         }
 
-        // Hàm hỗ trợ upload ảnh (giữ nguyên logic cũ của bạn)
         private async Task<string> UploadImageAsync(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -188,7 +184,7 @@ namespace DATN.Services.Implementations
             if (!string.IsNullOrEmpty(model.BackIdentityImage))
                 existingProfile.BackIdentityImage = model.BackIdentityImage;
 
-            // Khi shop sửa lại thông tin, có thể reset trạng thái về Chờ duyệt (0) nếu cần thiết
+            // Khi shop sửa lại thông tin, có thể reset trạng thái về Chờ duyệt (0)
             // existingProfile.Status = 0; 
 
             _context.SellerProfiles.Update(existingProfile);
@@ -222,7 +218,6 @@ namespace DATN.Services.Implementations
                 .CountAsync(p => p.ShopId == shop.ShopId && p.IsDeleted == false);
 
             // 3. Lấy danh sách đơn hàng của Shop
-            // Lấy các đơn hàng có CHỨA ÍT NHẤT 1 SẢN PHẨM thuộc về Shop hiện tại
             var shopOrders = await (from o in _context.Orders
                                     join oi in _context.OrderItems on o.OrderId equals oi.OrderId
                                     join v in _context.ProductVariants on oi.VariantId equals v.VariantId
