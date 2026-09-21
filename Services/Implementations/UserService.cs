@@ -46,15 +46,22 @@ namespace DATN.Services.Implementations
 
         public async Task<UserDto?> AuthenticateAsync(string email, string password)
         {
+            // 1. Tìm user kèm theo Role
             var user = await _context.Users
                 .Include(u => u.Role)
-        .FirstOrDefaultAsync(u => u.Email == email);
+                .FirstOrDefaultAsync(u => u.Email == email);
 
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("Người dùng không tồn tại.");
+            }
 
-            if (user == null) return null;
+            if (user.IsLocked)
+            {
+                throw new UnauthorizedAccessException("Tài khoản của bạn đã bị khóa.");
+            }
 
             bool isPasswordValid = false;
-
 
             if (user.PasswordHash.StartsWith("$2a$") || user.PasswordHash.StartsWith("$2b$") || user.PasswordHash.StartsWith("$2y$"))
             {
@@ -66,13 +73,15 @@ namespace DATN.Services.Implementations
 
                 if (isPasswordValid)
                 {
-                    //  Tự động nâng cấp mật khẩu sang BCrypt ngay khi user đăng nhập thành công
                     user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
                     await _context.SaveChangesAsync();
                 }
             }
 
-            if (!isPasswordValid) return null;
+            if (!isPasswordValid)
+            {
+                throw new UnauthorizedAccessException("Mật khẩu không chính xác.");
+            }
 
             return new UserDto
             {
@@ -172,22 +181,43 @@ namespace DATN.Services.Implementations
         {
             try
             {
-                var user = await _context.Users.FindAsync(id);
+                var user = await _context.Users
+                    .Include(u => u.Role)
+                    .FirstOrDefaultAsync(u => u.UserId == id);
+
                 if (user == null)
                 {
                     return new ServiceResult { Success = false, Message = "Không tìm thấy tài khoản." };
                 }
 
-                // Đảo ngược trạng thái: đang khóa thì mở, đang mở thì khóa
-                user.IsLocked = user.IsLocked ? false : true;
+                bool willBeLocked = !user.IsLocked;
+                user.IsLocked = willBeLocked;
+
+                if (user.Role?.RoleName == "Seller")
+                {
+                    var shop = await _context.Shops
+                        .Include(s => s.Products) 
+                        .FirstOrDefaultAsync(s => s.UserId == user.UserId);
+
+                    if (shop != null)
+                    {
+                        if (shop.Products != null && shop.Products.Any())
+                        {
+                            foreach (var product in shop.Products)
+                            {
+                                product.IsDeleted = willBeLocked;
+                            }
+                        }
+                    }
+                }
 
                 await _context.SaveChangesAsync();
 
-                string actionMessage = !user.IsLocked ? "Mở khóa tài khoản thành công." : "Khóa tài khoản thành công.";
+                string actionMessage = !user.IsLocked ? "Mở khóa tài khoản thành công." : "Khóa tài khoản và ẩn tất cả sản phẩm của shop thành công.";
 
                 return new ServiceResult { Success = true, Message = actionMessage };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return new ServiceResult { Success = false, Message = "Lỗi hệ thống khi cập nhật trạng thái." };
             }

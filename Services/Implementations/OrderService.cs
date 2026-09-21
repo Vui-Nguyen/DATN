@@ -115,7 +115,7 @@ namespace DATN.Services.Implementations
             return (voucher, discount, null);
         }
 
-        // Dựng dữ liệu cho trang thanh toán: CHỈ gồm các sản phẩm được chọn
+
         public async Task<CreateOrderViewModel> BuildCheckoutModelAsync(
             int userId, List<int> selectedCartItemIds, int? voucherId)
         {
@@ -254,6 +254,7 @@ namespace DATN.Services.Implementations
 
                 decimal totalAmount = Math.Max(0, itemsTotal + shippingFee - discount);
 
+                
                 // 5. Tạo đơn hàng
                 var order = new Order
                 {
@@ -270,6 +271,15 @@ namespace DATN.Services.Implementations
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
 
+                var voucherUsage = new VoucherUsage
+                {
+                    UserId = userId,
+                    VoucherId = voucher?.VoucherId ?? 0,
+                    OrderId =order.OrderId,
+                    UsedDate = DateTime.Now
+                };
+                _context.VoucherUsages.Add(voucherUsage);
+                await _context.SaveChangesAsync();
                 // 6. Chi tiết đơn + trừ kho
                 foreach (var item in selectedItems)
                 {

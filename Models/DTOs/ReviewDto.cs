@@ -8,5 +8,8 @@
         public int Rating { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? Comment { get; set; }
+
+        public string? Reply { get; set; }
+        public DateTime? RepliedAt { get; set; }
     }
 }

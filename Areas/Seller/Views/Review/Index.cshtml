@@ -1,0 +1,157 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Areas.Seller.Models.DTOs.ReviewSellerDto>
+
+@{
+    ViewData["Title"] = "Quản lý đánh giá sản phẩm";
+    Layout = "_SellerLayout"; 
+}
+
+<div class="container-fluid mt-4 px-4">
+    <h2 class="mb-4">Quản lý đánh giá sản phẩm của cửa hàng</h2>
+
+    <!-- Thông báo thành công / lỗi nếu có -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model == null || !Model.Items.Any())
+    {
+        <div class="alert alert-info">Cửa hàng của bạn chưa có đánh giá nào từ khách hàng.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Sản phẩm</th>
+                                <th>Khách hàng</th>
+                                <th class="text-center">Số sao</th>
+                                <th>Nội dung nhận xét</th>
+                                <th class="text-center">Thời gian</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var review in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold text-primary">@review.ProductName</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">@review.Email</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <!-- Hiển thị số sao bằng màu vàng -->
+                                        <div class="text-warning">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= review.Rating)
+                                                {
+                                                    <i class="bi bi-star-fill"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-star"></i>
+                                                }
+                                            }
+                                        </div>
+                                        <small class="text-muted">(@review.Rating/5)</small>
+                                    </td>
+                                    <td>
+                                        <p class="mb-1 text-break">@review.Comment</p>
+
+                                        @if (!string.IsNullOrEmpty(review.Reply))
+                                        {
+                                            <div class="p-2 bg-light border-start border-3 border-primary rounded mt-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <small class="fw-bold text-primary">Phản hồi từ Cửa hàng:</small>
+                                                    <!-- Nút bật form sửa phản hồi -->
+                                                    <button class="btn btn-sm btn-link text-decoration-none p-0 text-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#editReplyForm-@review.ReviewId" title="Sửa phản hồi">
+                                                        <i class="bi bi-pencil-square"></i> Sửa
+                                                    </button>
+                                                </div>
+                                                <p class="mb-1 text-muted small">@review.Reply</p>
+                                                <small class="text-muted" style="font-size: 0.75rem;">@review.RepliedAt?.ToString("dd/MM/yyyy HH:mm")</small>
+
+                                                <!-- Form chỉnh sửa phản hồi (Ẩn/Hiện bằng Collapse) -->
+                                                <div class="collapse mt-2" id="editReplyForm-@review.ReviewId">
+                                                    <form asp-action="UpdateReply" method="post">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                                                        <div class="input-group input-group-sm">
+                                                            <input type="text" name="replyContent" class="form-control" value="@review.Reply" required />
+                                                            <button class="btn btn-outline-primary" type="submit">Cập nhật</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <!-- Phần form phản hồi mới ban đầu của bạn -->
+                                            <button class="btn btn-sm btn-outline-primary mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#replyForm-@review.ReviewId">
+                                                <i class="bi bi-reply"></i> Phản hồi
+                                            </button>
+
+                                            <div class="collapse mt-2" id="replyForm-@review.ReviewId">
+                                                <form asp-action="Reply" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="text" name="replyContent" class="form-control" placeholder="Nhập nội dung phản hồi..." required />
+                                                        <button class="btn btn-primary" type="submit">Gửi</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center text-muted">
+                                        <small>@review.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <form asp-action="DeleteReviewBySeller" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn đánh giá này không?');" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="reviewId" value="@review.ReviewId" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger mb-1" title="Xóa đánh giá">
+                                                <i class="bi bi-trash"></i> Xóa
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phân trang (Pagination) -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-area="Seller" asp-controller="Review" asp-action="Index" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+</div>

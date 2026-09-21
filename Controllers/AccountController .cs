@@ -69,44 +69,55 @@ namespace DATN.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = await _userService.AuthenticateAsync(model.Email, model.Password);
-            if (user == null)
+            try
             {
-                ModelState.AddModelError("", "Email hoặc mật khẩu không đúng.");
+                // Gọi AuthenticateAsync (nếu ở Service bạn dùng kiểu ném ngoại lệ như gợi ý trước)
+                var user = await _userService.AuthenticateAsync(model.Email, model.Password);
+
+                if (user == null)
+                {
+                    ModelState.AddModelError("", "Email hoặc mật khẩu không đúng.");
+                    return View(model);
+                }
+
+                var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
+            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.RoleName ?? "Customer")
+        };
+
+                if (user.RoleName == "Seller")
+                {
+                    var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == user.UserID);
+
+                    if (shop != null)
+                    {
+                        claims.Add(new Claim("ShopId", shop.ShopId.ToString()));
+                    }
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+                    new AuthenticationProperties { IsPersistent = model.RememberMe });
+
+                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return Redirect(returnUrl);
+
+                // Chuyển hướng dựa theo Role
+                if (user.RoleName == "Admin")
+                    return RedirectToAction("Index", "Categories", new { area = "Admin" });
+
+                return RedirectToAction("Index", "Product");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                ModelState.AddModelError("", ex.Message);
                 return View(model);
             }
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.UserID.ToString()),
-                new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.RoleName ?? "Customer")
-            };
-            if (user.RoleName == "Seller")
-            {
-                var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == user.UserID);
-
-                if (shop != null)
-                {
-                    claims.Add(new Claim("ShopId", shop.ShopId.ToString()));
-                }
-            }
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
-                new AuthenticationProperties { IsPersistent = model.RememberMe });
-
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-
-            // Redirect based on role
-            if (user.RoleName == "Admin")
-                return RedirectToAction("Index", "Categories", new { area = "Admin" });
-
-            return RedirectToAction("Index", "Product");
         }
 
         // POST: /Account/Logout

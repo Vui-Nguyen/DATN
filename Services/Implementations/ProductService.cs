@@ -57,6 +57,7 @@ namespace DATN.Services.Implementations
 
             return new PagedResult<ProductDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
         }
+
         public async Task<ProductDetailDto?> GetDetailAsync(int id)
         {
             // Tối ưu: Include toàn bộ trong 1 query duy nhất

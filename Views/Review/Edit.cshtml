@@ -4,7 +4,16 @@
     ViewData["Title"] = "Chỉnh sửa đánh giá";
     Layout = "_Layout";
 }
+<style>
+    .star-rating-group i {
+        cursor: pointer;
+        transition: transform 0.15s ease-in-out;
+    }
 
+        .star-rating-group i:hover {
+            transform: scale(1.2);
+        }
+</style>
 <div class="container mt-4" style="max-width: 600px;">
     <div class="card shadow">
         <div class="card-body">
@@ -24,17 +33,23 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
-                    <label asp-for="Rating" class="form-label">Mức độ hài lòng (Số sao)</label>
-                    <select asp-for="Rating" class="form-select" required>
-                        <option value="5">5 Sao - Tuyệt vời</option>
-                        <option value="4">4 Sao - Hài lòng</option>
-                        <option value="3">3 Sao - Bình thường</option>
-                        <option value="2">2 Sao - Không hài lòng</option>
-                        <option value="1">1 Sao - Rất tệ</option>
-                    </select>
+                    <label class="form-label d-block">Mức độ hài lòng</label>
+
+                    <!-- Hidden input để bind dữ liệu về Model -->
+                    <input type="hidden" asp-for="Rating" id="ratingValue" />
+
+                    <!-- Khu vực hiển thị các ngôi sao -->
+                    <div class="star-rating-group fs-2 text-warning cursor-pointer" id="starContainer">
+                        <i class="bi bi-star" data-value="1"></i>
+                        <i class="bi bi-star" data-value="2"></i>
+                        <i class="bi bi-star" data-value="3"></i>
+                        <i class="bi bi-star" data-value="4"></i>
+                        <i class="bi bi-star" data-value="5"></i>
+                        <span id="ratingText" class="ms-3 fs-6 text-muted align-middle">-- Chọn số sao --</span>
+                    </div>
+
                     <span asp-validation-for="Rating" class="text-danger"></span>
                 </div>
-
                 <div class="mb-3">
                     <label asp-for="Comment" class="form-label">Nhận xét của bạn</label>
                     <textarea asp-for="Comment" class="form-control" rows="4" required placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."></textarea>
@@ -55,4 +70,60 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const stars = document.querySelectorAll("#starContainer i");
+            const ratingInput = document.getElementById("ratingValue");
+            const ratingText = document.getElementById("ratingText");
+
+            const descriptions = {
+                1: "1 Sao - Rất tệ",
+                2: "2 Sao - Không hài lòng",
+                3: "3 Sao - Bình thường",
+                4: "4 Sao - Hài lòng",
+                5: "5 Sao - Tuyệt vời"
+            };
+
+            function highlightStars(count) {
+                stars.forEach(s => {
+                    const val = parseInt(s.getAttribute("data-value"));
+                    if (val <= count) {
+                        s.classList.remove("bi-star");
+                        s.classList.add("bi-star-fill"); // Sao vàng đặc
+                    } else {
+                        s.classList.remove("bi-star-fill");
+                        s.classList.add("bi-star"); // Sao rỗng
+                    }
+                });
+            }
+
+   
+            let currentRating = parseInt(ratingInput.value) || 0;
+            if (currentRating > 0) {
+                highlightStars(currentRating); 
+                ratingText.textContent = descriptions[currentRating];
+            }
+
+            stars.forEach(star => {
+                // Khi rê chuột vào
+                star.addEventListener("mouseenter", function () {
+                    const val = this.getAttribute("data-value");
+                    highlightStars(val);
+                });
+
+                // Khi rê chuột ra ngoài -> trả về giá trị đã chọn thật sự
+                star.addEventListener("mouseleave", function () {
+                    highlightStars(currentRating);
+                });
+
+                // Khi click chọn sao
+                star.addEventListener("click", function () {
+                    currentRating = parseInt(this.getAttribute("data-value"));
+                    ratingInput.value = currentRating;
+                    ratingText.textContent = descriptions[currentRating];
+                    highlightStars(currentRating);
+                });
+            });
+        });
+    </script>
 }

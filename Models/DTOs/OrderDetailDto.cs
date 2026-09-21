@@ -30,6 +30,8 @@ namespace DATN.Models.DTOs
 
         public bool HasReviewed { get; set; }
         public int? ReviewId { get; set; }
+        public string? Reply { get; set; }
+        public DateTime? RepliedAt { get; set; }
     }
 
   
