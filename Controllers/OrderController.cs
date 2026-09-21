@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using YourApp.Services.Implementations;
+using DATN.Helpers;
+
 
 namespace DATN.Controllers
 {
@@ -99,7 +100,6 @@ namespace DATN.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateOrder(CreateOrderViewModel model)
         {
-            // Các danh sách chỉ dùng để hiển thị, không được gửi lên
             ModelState.Remove(nameof(model.CartItems));
             ModelState.Remove(nameof(model.UserAddresses));
             ModelState.Remove(nameof(model.AvailableVouchers));
@@ -108,10 +108,16 @@ namespace DATN.Controllers
                 return await RebuildCheckoutView(model);
 
             var result = await _orderService.CreateAsync(GetUserId(), model);
+
             if (!result.Success)
             {
                 ModelState.AddModelError(string.Empty, result.Message ?? "Đặt hàng thất bại.");
                 return await RebuildCheckoutView(model);
+            }
+
+            if (model.PaymentMethod == "Banking" && !string.IsNullOrEmpty(result.PaymentUrl))
+            {
+                return Redirect(result.PaymentUrl);
             }
 
             TempData["Success"] = "Đặt hàng thành công!";

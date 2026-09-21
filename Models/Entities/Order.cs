@@ -20,9 +20,7 @@ public partial class Order
 
     public decimal ShippingFee { get; set; } = 0;   // Phí vận chuyển
 
-    public decimal DiscountAmount { get; set; } = 0;// Số tiền giảm giá từ voucher
-
-    public string? PaymentMethod { get; set; }      // Phương thức thanh toán (COD, BankTransfer...)
+    public decimal DiscountAmount { get; set; } = 0;// Số tiền giảm giá từ voucher   
 
     public virtual Address Address { get; set; } = null!;
 

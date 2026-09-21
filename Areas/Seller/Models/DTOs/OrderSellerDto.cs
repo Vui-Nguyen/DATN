@@ -4,7 +4,7 @@ using DATN.Models.DTOs;
 
 namespace DATN.Areas.Seller.Models.DTOs
 {
-    public class OrderSelllerDto
+    public class OrderSellerDto
     {
         public int OrderID { get; set; }
 

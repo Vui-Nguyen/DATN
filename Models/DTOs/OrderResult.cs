@@ -4,6 +4,7 @@
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        public int OrderId { get; set; } // Dùng để chuyển hướng sang trang chi tiết đơn hàng vừa tạo [cite: 270, 316]
+        public int OrderId { get; set; }
+        public string? PaymentUrl { get; set; }
     }
 }

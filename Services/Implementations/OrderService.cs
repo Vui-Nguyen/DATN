@@ -7,6 +7,7 @@ using DATN.Models.ViewModels;
 using DATN.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using DATN.Helpers;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using static NuGet.Packaging.PackagingConstants;
@@ -15,12 +16,14 @@ namespace DATN.Services.Implementations
 {
     public class OrderService : IOrderService
     {
+        private readonly IConfiguration _configuration;
         private readonly AppDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public OrderService(AppDbContext context, IHttpContextAccessor httpContextAccessor)
+        public OrderService(AppDbContext context, IHttpContextAccessor httpContextAccessor, IConfiguration configuration)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+            _configuration = configuration;
         }
 
         public async Task<PagedResult<OrderDto>> GetByUserAsync(int userId, int page)
@@ -59,7 +62,6 @@ namespace DATN.Services.Implementations
                 TotalAmount = order.TotalAmount,
                 ShippingFee = order.ShippingFee,
                 DiscountAmount = order.DiscountAmount,
-                PaymentMethod = order.PaymentMethod,
                 Note = order.Note,
                 Status = order.Status,
                 AddressID = order.AddressId,
@@ -265,11 +267,20 @@ namespace DATN.Services.Implementations
                     ShippingFee = shippingFee,
                     TotalAmount = totalAmount,
                     Note = model.Note,
-                    PaymentMethod = model.PaymentMethod,
                     Status = "Pending"
                 };
                 _context.Orders.Add(order);
                 await _context.SaveChangesAsync();
+
+                var payment = new Payment
+                {
+                    OrderId = order.OrderId,
+                    PaymentMethod = model.PaymentMethod,
+                    Amount = totalAmount,
+                    PaymentDate = DateTime.Now,
+                    Status = model.PaymentMethod == "COD" ? "Pending" : "AwaitingPayment"
+                };
+                _context.Payments.Add(payment);
 
                 var voucherUsage = new VoucherUsage
                 {
@@ -278,7 +289,11 @@ namespace DATN.Services.Implementations
                     OrderId =order.OrderId,
                     UsedDate = DateTime.Now
                 };
-                _context.VoucherUsages.Add(voucherUsage);
+                if (voucher != null)
+                {
+                    _context.VoucherUsages.Add(voucherUsage);
+                    voucher.Quantity -= 1; 
+                }
                 await _context.SaveChangesAsync();
                 // 6. Chi tiết đơn + trừ kho
                 foreach (var item in selectedItems)
@@ -293,18 +308,30 @@ namespace DATN.Services.Implementations
                         UnitPrice = item.Variant.Price
                     });
                 }
-
-                // 7. Trừ lượt voucher
-                if (voucher != null)
-                    voucher.Quantity -= 1;
-
                 // 8. Xoá khỏi giỏ hàng các sản phẩm đã mua 
                 _context.CartItems.RemoveRange(selectedItems);
+                // 9. Sinh link thanh toán nếu chọn Banking
+                string? paymentUrl = null;
+                if (model.PaymentMethod == "Banking")
+                {
+                    // Lấy HttpContext từ _httpContextAccessor đã tiêm trên đầu file
+                    var context = _httpContextAccessor.HttpContext;
+                    if (context != null)
+                    {
+                        paymentUrl = CreateVnPayUrl(order.OrderId, totalAmount, context);
+                    }
+                }
+
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new OrderResult { Success = true, OrderId = order.OrderId };
+                return new OrderResult
+                {
+                    Success = true,
+                    OrderId = order.OrderId,
+                    PaymentUrl = paymentUrl
+                };
             }
             catch (Exception ex)
             {
@@ -318,9 +345,10 @@ namespace DATN.Services.Implementations
         }
         public async Task<ServiceResult> CancelAsync(int id, int userId)
         {
-            // 1. Tìm đơn hàng kèm theo các sản phẩm trong đơn (OrderItems) để hoàn kho
+            // 1. Tìm đơn hàng kèm theo OrderItems và Payments để hoàn kho và cập nhật thanh toán
             var order = await _context.Orders
-                .Include(o => o.OrderItems) 
+                .Include(o => o.OrderItems)
+                .Include(o => o.Payments) // <--- Bổ sung Include bảng Payments
                 .FirstOrDefaultAsync(o => o.OrderId == id && o.UserId == userId);
 
             if (order == null)
@@ -333,18 +361,25 @@ namespace DATN.Services.Implementations
             // 3. Hoàn lại số lượng sản phẩm vào kho
             foreach (var item in order.OrderItems)
             {
-                // Tìm biến thể dựa vào VariantId lưu trong OrderItem
                 var variant = await _context.ProductVariants.FindAsync(item.VariantId);
                 if (variant != null)
                 {
-                    variant.Stock += item.Quantity; 
+                    variant.Stock += item.Quantity;
                 }
             }
 
             // 4. Cập nhật trạng thái đơn hàng thành Cancelled 
             order.Status = "Cancelled";
 
-            // 5. Thêm lịch sử thay đổi trạng thái
+            // 5. Cập nhật trạng thái thanh toán trong bảng Payments thành Failed/Hủy
+            var payment = order.Payments.FirstOrDefault();
+            if (payment != null)
+            {
+                payment.Status = "Failed";
+                payment.GatewayResponse = "Khách hàng đã chủ động hủy đơn hàng";
+            }
+
+            // 6. Thêm lịch sử thay đổi trạng thái
             _context.OrderStatusHistories.Add(new OrderStatusHistory
             {
                 OrderId = id,
@@ -356,9 +391,8 @@ namespace DATN.Services.Implementations
             await _context.SaveChangesAsync();
             return new ServiceResult { Success = true, Message = "Hủy đơn hàng thành công." };
         }
-
         // Lấy danh sách đơn hàng cho Seller (có hỗ trợ lọc theo status nếu cần)
-        public async Task<PagedResult<OrderSelllerDto>> GetAllAsync(string? status, int page)
+        public async Task<PagedResult<OrderSellerDto>> GetAllAsync(string? status, int page)
         {
             int pageSize = 10;
             int userId = 0;
@@ -388,7 +422,7 @@ namespace DATN.Services.Implementations
 
             int totalItems = await query.CountAsync();
             var items = await query.OrderByDescending(o => o.OrderDate).Skip((page - 1) * pageSize).Take(pageSize)
-                .Select(o => new OrderSelllerDto
+                .Select(o => new OrderSellerDto
                 {
                     OrderID = o.OrderId,
                     CustomerName = o.User != null ? o.User.FullName : "Khách vãng lai",
@@ -397,7 +431,7 @@ namespace DATN.Services.Implementations
                     Status = o.Status
                 }).ToListAsync();
 
-            return new PagedResult<OrderSelllerDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
+            return new PagedResult<OrderSellerDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
         }
 
         public async Task<OrderDetailSellerDto?> GetSellerDetailAsync(int id)
@@ -419,7 +453,6 @@ namespace DATN.Services.Implementations
                 TotalAmount = order.TotalAmount,
                 ShippingFee = order.ShippingFee,
                 DiscountAmount = order.DiscountAmount,
-                PaymentMethod = order.PaymentMethod,
                 Note = order.Note,
                 Status = order.Status,
                 OrderItems = order.OrderItems.Select(i => new OrderItemDto
@@ -432,14 +465,43 @@ namespace DATN.Services.Implementations
             };
         }
 
-        // Cập nhật trạng thái đơn hàng do Seller thực hiện, có lưu vết sellerId
         public async Task<ServiceResult> UpdateStatusAsync(int id, string status)
         {
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == id);
-            if (order == null) return new ServiceResult { Success = false, Message = "Không tìm thấy đơn hàng." };
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.OrderId == id);
 
-            // Cập nhật trạng thái mới trực tiếp vào bảng Order nếu có cột Status
+            if (order == null)
+                return new ServiceResult { Success = false, Message = "Không tìm thấy đơn hàng." };
+
+            if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase) && !order.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var item in order.OrderItems)
+                {
+                    var variant = await _context.ProductVariants.FindAsync(item.VariantId);
+                    if (variant != null)
+                    {
+                        variant.Stock += item.Quantity; 
+                    }
+                }
+            }
             order.Status = status;
+
+            var payment = order.Payments.FirstOrDefault();
+            if (payment != null)
+            {
+                if (status.Equals("Delivered", StringComparison.OrdinalIgnoreCase))
+                {
+                    payment.Status = "Success";
+                    payment.GatewayResponse = "Thanh toán thành công (COD)";
+                }
+                else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    payment.Status = "Failed";
+                    payment.GatewayResponse = "Lỗi COD / Đơn hàng đã bị hủy";
+                }
+            }
 
             int? sellerId = null;
             var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -447,17 +509,41 @@ namespace DATN.Services.Implementations
             {
                 sellerId = parsedId;
             }
-            // Đồng thời ghi lịch sử vào OrderStatusHistory kèm ID của Seller thao tác[cite: 1]
+
             _context.OrderStatusHistories.Add(new OrderStatusHistory
             {
                 OrderId = id,
                 Status = status,
                 UpdatedAt = DateTime.Now,
-                ChangedBy = sellerId 
+                ChangedBy = sellerId
             });
 
             await _context.SaveChangesAsync();
             return new ServiceResult { Success = true, Message = "Cập nhật trạng thái thành công." };
+        }
+        public string CreateVnPayUrl(int orderId, decimal amount, HttpContext context)
+        {
+            var timeNow = DateTime.Now;
+            var payUrl = _configuration["VnPay:BaseUrl"];
+            var tmnCode = _configuration["VnPay:TmnCode"];
+            var hashSecret = _configuration["VnPay:HashSecret"];
+            var returnUrl = _configuration["VnPay:ReturnUrl"];
+
+            var vnpay = new VnPayLibrary();
+            vnpay.AddRequestData("vnp_Version", "2.1.0");
+            vnpay.AddRequestData("vnp_Command", "pay");
+            vnpay.AddRequestData("vnp_TmnCode", tmnCode);
+            vnpay.AddRequestData("vnp_Amount", ((int)(amount * 100)).ToString()); // VNPay nhân 100 lần số tiền thực tế
+            vnpay.AddRequestData("vnp_CreateDate", timeNow.ToString("yyyyMMddHHmmss"));
+            vnpay.AddRequestData("vnp_CurrCode", "VND");
+            vnpay.AddRequestData("vnp_IpAddr", context.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1");
+            vnpay.AddRequestData("vnp_Locale", "vn");
+            vnpay.AddRequestData("vnp_OrderInfo", $"Thanh toan don hang #{orderId}");
+            vnpay.AddRequestData("vnp_OrderType", "other");
+            vnpay.AddRequestData("vnp_ReturnUrl", returnUrl);
+            vnpay.AddRequestData("vnp_TxnRef", orderId.ToString()); // Dùng OrderId làm mã giao dịch để dễ đối soát
+
+            return vnpay.CreateRequestUrl(payUrl, hashSecret);
         }
     }
 }

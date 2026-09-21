@@ -13,7 +13,6 @@ namespace DATN.Models.DTOs
         public decimal TotalAmount { get; set; }
         public string Status { get; set; }
         public decimal ShippingFee { get; set; }
-        public string PaymentMethod { get; set; }
         public decimal DiscountAmount { get; set; }
         public string Note { get; set; }
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();

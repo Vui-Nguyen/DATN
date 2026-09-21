@@ -24,7 +24,6 @@
         </div>
         <div class="card-body">
             <p>Thời gian ghi nhận: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
-            <p>Phương thức thanh toán: <strong>@(Model.PaymentMethod ?? "COD")</strong></p>
             <p>Phí vận chuyển: <strong>@Model.ShippingFee.ToString("N0") đ</strong></p>
             <p>Số tiền giảm giá (Voucher): <strong>@Model.DiscountAmount.ToString("N0") đ</strong></p>
             <p>

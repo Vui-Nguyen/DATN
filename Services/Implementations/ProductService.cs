@@ -1,4 +1,4 @@
-﻿using DATN.Areas.Admin.Models.DTOs;
+﻿using DATN.Areas.Seller.Models.DTOs;
 using DATN.Areas.Seller.Models.ViewModels;
 using DATN.Data;
 using DATN.Models;
