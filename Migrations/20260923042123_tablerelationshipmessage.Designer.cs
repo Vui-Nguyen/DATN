@@ -4,6 +4,7 @@ using DATN.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DATN.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260923042123_tablerelationshipmessage")]
+    partial class tablerelationshipmessage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,15 +77,6 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
 
                     b.HasKey("BrandId")
                         .HasName("PK__Brands__DAD4F3BE101E263A");
@@ -158,95 +152,10 @@ namespace DATN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
                     b.HasKey("CategoryId")
                         .HasName("PK__Categori__19093A2BE4E2407A");
 
                     b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("DATN.Models.Entities.ChatMessage", b =>
-                {
-                    b.Property<int>("ChatMessageId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("MessageID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChatMessageId"));
-
-                    b.Property<int>("ConversationId")
-                        .HasColumnType("int")
-                        .HasColumnName("ConversationID");
-
-                    b.Property<bool>("IsRead")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("MessageText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SenderId")
-                        .HasColumnType("int")
-                        .HasColumnName("SenderID");
-
-                    b.Property<DateTime>("SentAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("(getutcdate())");
-
-                    b.HasKey("ChatMessageId");
-
-                    b.HasIndex("ConversationId");
-
-                    b.HasIndex("SenderId");
-
-                    b.ToTable("ChatMessages");
-                });
-
-            modelBuilder.Entity("DATN.Models.Entities.Conversation", b =>
-                {
-                    b.Property<int>("ConversationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("ConversationID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConversationId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("(getutcdate())");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int")
-                        .HasColumnName("CustomerID");
-
-                    b.Property<int>("ShopId")
-                        .HasColumnType("int")
-                        .HasColumnName("ShopID");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("(getutcdate())");
-
-                    b.HasKey("ConversationId");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("ShopId");
-
-                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Order", b =>
@@ -449,10 +358,6 @@ namespace DATN.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ShopID");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("ProductId")
                         .HasName("PK__Products__B40CC6ED13A968AA");
 
@@ -628,7 +533,7 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ShopID")
+                    b.Property<int>("ShopID")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -640,8 +545,7 @@ namespace DATN.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ShopID")
-                        .IsUnique()
-                        .HasFilter("[ShopID] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("UserId");
 
@@ -866,45 +770,6 @@ namespace DATN.Migrations
                     b.Navigation("Variant");
                 });
 
-            modelBuilder.Entity("DATN.Models.Entities.ChatMessage", b =>
-                {
-                    b.HasOne("DATN.Models.Entities.Conversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_ChatMessages_Conversation");
-
-                    b.HasOne("DATN.Models.Entities.User", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .IsRequired()
-                        .HasConstraintName("FK_ChatMessages_Sender");
-
-                    b.Navigation("Conversation");
-
-                    b.Navigation("Sender");
-                });
-
-            modelBuilder.Entity("DATN.Models.Entities.Conversation", b =>
-                {
-                    b.HasOne("DATN.Models.Entities.User", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Conversations_Customer");
-
-                    b.HasOne("DATN.Models.Entities.Shop", "Shop")
-                        .WithMany()
-                        .HasForeignKey("ShopId")
-                        .IsRequired()
-                        .HasConstraintName("FK_Conversations_Shop");
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("Shop");
-                });
-
             modelBuilder.Entity("DATN.Models.Entities.Order", b =>
                 {
                     b.HasOne("DATN.Models.Entities.Address", "Address")
@@ -1036,7 +901,9 @@ namespace DATN.Migrations
                 {
                     b.HasOne("DATN.Models.Entities.Shop", "Shop")
                         .WithOne("SellerProfile")
-                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID");
+                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("DATN.Models.Entities.User", "User")
                         .WithMany()
@@ -1116,11 +983,6 @@ namespace DATN.Migrations
             modelBuilder.Entity("DATN.Models.Entities.Category", b =>
                 {
                     b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("DATN.Models.Entities.Conversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Order", b =>

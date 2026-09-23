@@ -53,6 +53,9 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<VoucherUsage> VoucherUsages { get; set; }
 
+    public virtual DbSet<Conversation> Conversations { get; set; }
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Data Source=NGUYENZUI;Initial Catalog=NVVDATN;Integrated Security=True;Trust Server Certificate=True");
@@ -390,9 +393,70 @@ public partial class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VoucherUs__Vouch__7C4F7684");
         });
+        // Cấu hình bảng Conversations
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId);
+
+            entity.Property(e => e.ConversationId).HasColumnName("ConversationID");
+            entity.Property(e => e.CustomerId).HasColumnName("CustomerID");
+            entity.Property(e => e.ShopId).HasColumnName("ShopID");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
+
+            // Quan hệ với Customer (User)
+            entity.HasOne(d => d.Customer)
+                .WithMany()
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Conversations_Customer");
+
+            // Quan hệ với Shop
+            entity.HasOne(d => d.Shop)
+                .WithMany()
+                .HasForeignKey(d => d.ShopId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Conversations_Shop");
+        });
+
+        // Cấu hình bảng ChatMessages
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.ChatMessageId);
+
+            entity.Property(e => e.ChatMessageId).HasColumnName("MessageID");
+            entity.Property(e => e.ConversationId).HasColumnName("ConversationID");
+            entity.Property(e => e.SenderId).HasColumnName("SenderID");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.Property(e => e.SentAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime2");
+
+            // Quan hệ với Conversation (Xóa Conversation thì xóa luôn toàn bộ Message)
+            entity.HasOne(d => d.Conversation)
+                .WithMany(p => p.Messages)
+                .HasForeignKey(d => d.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_ChatMessages_Conversation");
+
+            // Quan hệ với Sender (User)
+            entity.HasOne(d => d.Sender)
+                .WithMany()
+                .HasForeignKey(d => d.SenderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatMessages_Sender");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }
+
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

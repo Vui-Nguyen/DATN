@@ -245,6 +245,7 @@ namespace DATN.Services.Implementations
                     {
                         UserId = id,
                         ShopName = !string.IsNullOrEmpty(user.FullName) ? $"Cửa hàng của {user.FullName}" : "Cửa hàng mới",
+                        AvatarShop = "default_shop_avatar.png",
                         Description = "Được khởi tạo tự động khi nâng cấp quyền Seller",
                         IsLocked = false, // 0: Active
                         CreatedAt = DateTime.Now

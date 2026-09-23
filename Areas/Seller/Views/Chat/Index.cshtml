@@ -1,0 +1,152 @@
+﻿@{
+    ViewData["Title"] = "Quản lý tin nhắn khách hàng";
+    Layout = "_SellerLayout"; 
+
+    var currentUserId = ViewBag.CurrentUserId as string;
+    var currentConversationId = ViewBag.CurrentConversationId as int?;
+}
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Tin nhắn từ khách hàng</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="row m-0" style="height: 75vh;">
+
+            <!-- CỘT TRÁI: DANH SÁCH KHÁCH HÀNG -->
+            <div class="col-md-4 p-0 border-right" style="overflow-y: auto;">
+                <ul class="list-group list-group-flush" id="chat-sidebar">
+                    @if (ViewBag.Conversations != null)
+                    {
+                        foreach (var conv in ViewBag.Conversations)
+                        {
+                            <a href="@Url.Action("Index", "Chat", new { area = "Seller", conversationId = conv.ConversationId })"
+                               class="list-group-item list-group-item-action @(currentConversationId == conv.ConversationId ? "active text-white" : "")"
+                               id="conv-@conv.ConversationId">
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong><i class="fas fa-user-circle mr-1"></i> @conv.PartnerName</strong>
+                                    @if (conv.UnreadCount > 0)
+                                    {
+                                        <span class="badge badge-danger badge-pill">@conv.UnreadCount</span>
+                                    }
+                                </div>
+                                <small class="@(currentConversationId == conv.ConversationId ? "text-light" : "text-muted") text-truncate d-block mt-1" id="last-msg-@conv.ConversationId">
+                                    @conv.LastMessage
+                                </small>
+                            </a>
+                        }
+                    }
+                </ul>
+            </div>
+
+            <!-- CỘT PHẢI: KHUNG CHAT CHI TIẾT -->
+            <div class="col-md-8 p-0 d-flex flex-column bg-light">
+                @if (currentConversationId.HasValue)
+                {
+                    <div id="messagesList" class="p-3 flex-grow-1" style="overflow-y: auto;">
+                        @if (ViewBag.Messages != null)
+                        {
+                            foreach (var msg in ViewBag.Messages)
+                            {
+                                var isMine = msg.SenderId.ToString() == currentUserId;
+                                <div class="mb-3 text-@(isMine ? "right" : "left")">
+                                    <div class="d-inline-block p-2 rounded shadow-sm @(isMine ? "bg-primary text-white" : "bg-white text-dark")"
+                                         style="max-width: 75%; text-align: left;">
+                                        <div>@msg.MessageText</div>
+                                        <small class="d-block text-right mt-1" style="font-size: 0.7em; opacity: 0.8;">@msg.SentAt.ToString("HH:mm")</small>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <div class="p-3 border-top bg-white">
+                        <div class="input-group">
+                            <textarea id="messageInput" class="form-control" rows="1" placeholder="Nhập tin nhắn hỗ trợ khách hàng..."></textarea>
+                            <div class="input-group-append">
+                                <button id="sendButton" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Gửi</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex h-100 justify-content-center align-items-center text-muted flex-column">
+                        <i class="fas fa-comments fa-4x mb-3 text-gray-300"></i>
+                        <h5>Chọn một khách hàng để bắt đầu tư vấn</h5>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.12/signalr.min.js"></script>
+    <script>
+        const currentUserId = "@currentUserId";
+        const currentConversationId = parseInt("@currentConversationId") || 0;
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        connection.on("ReceiveMessage", (message) => {
+            if (currentConversationId !== 0) {
+                const isMine = message.senderId.toString() === currentUserId;
+                const alignClass = isMine ? "text-right" : "text-left";
+                const bgClass = isMine ? "bg-primary text-white" : "bg-white text-dark";
+
+                const msgHtml = `
+                    <div class="mb-3 ${alignClass}">
+                        <div class="d-inline-block p-2 rounded shadow-sm ${bgClass}" style="max-width: 75%; text-align: left;">
+                            <div>${message.messageText}</div>
+                            <small class="d-block text-right mt-1" style="font-size: 0.7em; opacity: 0.8;">Vừa xong</small>
+                        </div>
+                    </div>`;
+
+                const messagesList = document.getElementById("messagesList");
+                messagesList.insertAdjacentHTML('beforeend', msgHtml);
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
+        });
+
+        connection.on("UpdateSidebar", (data) => {
+            const lastMsgElement = document.getElementById(`last-msg-${data.conversationId}`);
+            if (lastMsgElement) {
+                lastMsgElement.innerText = data.lastMessage;
+            }
+        });
+
+        connection.start().then(() => {
+            connection.invoke("JoinPersonalChannel", currentUserId);
+
+            if (currentConversationId !== 0) {
+                connection.invoke("JoinConversation", currentConversationId);
+                const messagesList = document.getElementById("messagesList");
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
+        }).catch(err => console.error(err.toString()));
+
+        document.getElementById("sendButton")?.addEventListener("click", () => {
+            const messageInput = document.getElementById("messageInput");
+            const text = messageInput.value.trim();
+
+            if (text === "") return;
+
+            connection.invoke("SendMessage", currentConversationId, currentUserId, "0", "Shop", text)
+                .catch(err => console.error(err.toString()));
+
+            messageInput.value = "";
+            messageInput.focus();
+        });
+
+        document.getElementById("messageInput")?.addEventListener("keypress", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById("sendButton").click();
+            }
+        });
+    </script>
+}

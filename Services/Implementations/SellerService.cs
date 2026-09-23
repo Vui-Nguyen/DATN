@@ -50,7 +50,7 @@ namespace DATN.Services.Implementations
                     IsLocked = false,
                     UserId = profile.UserId,
                     ShopName = profile.User?.FullName ?? "Cửa hàng mới",
-                    AvatarShop = "default.jpt",
+                    AvatarShop = "default.jpg",
                     Description = "Cửa hàng mới đăng ký",
                     CreatedAt = DateTime.Now
                 };

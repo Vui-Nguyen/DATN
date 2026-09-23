@@ -1,0 +1,159 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Tin nhắn";
+    var currentUserId = ViewBag.CurrentUserId as string;
+    var currentConversationId = ViewBag.CurrentConversationId as int?;
+}
+
+<div class="container mt-4">
+    <div class="row" style="height: 70vh; border: 1px solid #ddd;">
+
+        <!-- SIDEBAR: Danh sách hội thoại -->
+        <div class="col-md-4 p-0" style="border-right: 1px solid #ddd; overflow-y: auto;">
+            <div class="bg-light p-3 border-bottom font-weight-bold">Danh sách tin nhắn</div>
+            <ul class="list-group list-group-flush" id="chat-sidebar">
+                @foreach (var conv in ViewBag.Conversations)
+                {
+                    <a href="@Url.Action("Index", "Chat", new { conversationId = conv.ConversationId })"
+                       class="list-group-item list-group-item-action @(currentConversationId == conv.ConversationId ? "active" : "")"
+                       id="conv-@conv.ConversationId">
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>@conv.PartnerName</strong>
+                            @if (conv.UnreadCount > 0)
+                            {
+                                <span class="badge badge-danger badge-pill">@conv.UnreadCount</span>
+                            }
+                        </div>
+                        <small class="text-muted text-truncate d-block" id="last-msg-@conv.ConversationId">
+                            @conv.LastMessage
+                        </small>
+                    </a>
+                }
+            </ul>
+        </div>
+
+        <!-- KHUNG CHAT CHÍNH -->
+        <div class="col-md-8 p-0 d-flex flex-column">
+            @if (currentConversationId.HasValue)
+            {
+                <!-- Khu vực hiển thị tin nhắn -->
+                <div id="messagesList" class="p-3 flex-grow-1" style="overflow-y: auto; background-color: #f9f9f9;">
+                    @foreach (var msg in ViewBag.Messages)
+                    {
+                        var isMine = msg.SenderId.ToString() == currentUserId;
+                        <div class="mb-2 text-@(isMine ? "right" : "left")">
+                            <div class="d-inline-block p-2 rounded text-white"
+                                 style="background-color: @(isMine ? "#007bff" : "#6c757d"); max-width: 75%;">
+                                <div>@msg.MessageText</div>
+                                <small style="font-size: 0.7em;">@msg.SentAt.ToString("HH:mm")</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Khu vực nhập tin nhắn -->
+                <div class="p-3 border-top bg-white">
+                    <div class="input-group">
+                        <textarea id="messageInput" class="form-control" rows="1" placeholder="Nhập tin nhắn..."></textarea>
+                        <div class="input-group-append">
+                            <button id="sendButton" class="btn btn-primary">Gửi</button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-flex h-100 justify-content-center align-items-center text-muted">
+                    <h5>Chọn một cuộc hội thoại để bắt đầu chat</h5>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- 1. Import Thư viện SignalR qua CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.12/signalr.min.js"></script>
+
+    <script>
+        const currentUserId = "@currentUserId";
+        const currentConversationId = parseInt("@currentConversationId") || 0;
+
+        // 2. Khởi tạo kết nối tới Hub
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .build();
+
+        // 3. Xử lý nhận tin nhắn mới
+        connection.on("ReceiveMessage", (message) => {
+            if (currentConversationId !== 0) {
+                const isMine = message.senderId.toString() === currentUserId;
+                const alignClass = isMine ? "text-right" : "text-left";
+                const bgColor = isMine ? "#007bff" : "#6c757d";
+
+                const msgHtml = `
+                    <div class="mb-2 ${alignClass}">
+                        <div class="d-inline-block p-2 rounded text-white" style="background-color: ${bgColor}; max-width: 75%;">
+                            <div>${message.messageText}</div>
+                            <small style="font-size: 0.7em;">Vừa xong</small>
+                        </div>
+                    </div>`;
+
+                const messagesList = document.getElementById("messagesList");
+                messagesList.insertAdjacentHTML('beforeend', msgHtml);
+                messagesList.scrollTop = messagesList.scrollHeight; // Cuộn xuống cuối
+            }
+        });
+
+        // 4. Xử lý cập nhật Sidebar
+        connection.on("UpdateSidebar", (data) => {
+            const lastMsgElement = document.getElementById(`last-msg-${data.conversationId}`);
+            if (lastMsgElement) {
+                lastMsgElement.innerText = data.lastMessage;
+                // Nếu muốn đổi màu hoặc nhảy lên đầu danh sách thì thao tác DOM tại đây
+            }
+        });
+
+        // 5. Bắt đầu kết nối
+        connection.start().then(() => {
+            console.log("SignalR Connected.");
+
+            // Tham gia kênh cá nhân nhận thông báo
+            connection.invoke("JoinPersonalChannel", currentUserId);
+
+            // Tham gia phòng chat hiện tại (nếu có)
+            if (currentConversationId !== 0) {
+                connection.invoke("JoinConversation", currentConversationId);
+
+                // Cuộn xuống dòng tin nhắn mới nhất
+                const messagesList = document.getElementById("messagesList");
+                messagesList.scrollTop = messagesList.scrollHeight;
+            }
+        }).catch(err => console.error(err.toString()));
+
+        // 6. Xử lý sự kiện click nút Gửi
+        document.getElementById("sendButton")?.addEventListener("click", () => {
+            const messageInput = document.getElementById("messageInput");
+            const text = messageInput.value.trim();
+
+            if (text === "") return;
+
+            // Gọi hàm SendMessage trên Server Hub
+            // Lưu ý: receiverId tạm truyền "0" (hoặc truyền ID thực của Partner nếu đã lấy từ model)
+            connection.invoke("SendMessage", currentConversationId, currentUserId, "0", "Me", text)
+                .catch(err => console.error(err.toString()));
+
+            messageInput.value = "";
+            messageInput.focus();
+        });
+
+        // Hỗ trợ ấn Enter để gửi
+        document.getElementById("messageInput")?.addEventListener("keypress", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById("sendButton").click();
+            }
+        });
+    </script>
+}

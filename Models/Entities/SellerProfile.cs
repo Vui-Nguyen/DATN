@@ -8,8 +8,13 @@ namespace DATN.Models.Entities
         [Key]
         public int Id { get; set; }
 
+<<<<<<< HEAD
         public int? ShopID { get; set; } // Liên kết với bảng Shop
         public Shop Shop { get; set; } // Liên kết với bảng Shop
+=======
+        public int? ShopID { get; set; } 
+        public Shop Shop { get; set; } 
+>>>>>>> e771490 (Tam luu code dang lam)
         public int UserId { get; set; } // Liên kết với bảng User
 
         [Required, MaxLength(50)]

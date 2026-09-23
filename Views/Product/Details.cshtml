@@ -61,10 +61,14 @@
                         </div>
                     </div>
                     <div>
-                        <!-- Nút Chat (Chuẩn bị sẵn link dẫn tới trang chat sau này, ví dụ: /Chat?shopId=...) -->
-                        <a href="@Url.Action("Index", "Chat", new { shopId = Model.ShopId })" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm">
-                            <i class="bi bi-chat-dots-fill me-1"></i> Chat với Shop
-                        </a>
+                        <form asp-controller="Chat" asp-action="GetOrCreateConversation" method="post">
+                            <!-- Truyền ShopId của sản phẩm hiện tại vào form -->
+                            <input type="hidden" name="shopId" value="@Model.ShopId" />
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-comment-dots"></i> Chat ngay với Shop
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

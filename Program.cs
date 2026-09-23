@@ -1,7 +1,7 @@
 ﻿using DATN.Services;
 using DATN.Services.Implementations;
 using DATN.Services.Interfaces;
-using YourApp.Services.Implementations;
+using DATN.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using DATN.Data;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +31,18 @@ namespace DATN
             builder.Services.AddRazorPages();
             builder.Services.AddControllersWithViews();
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddSignalR();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.WithOrigins("http://localhost:7012")
+                           .AllowAnyHeader()
+                           .AllowAnyMethod()
+                           .AllowCredentials();
+                });
+            });
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AppDbContext>(options =>
@@ -48,9 +59,10 @@ namespace DATN
             builder.Services.AddScoped<ISellerService, SellerService>();
             builder.Services.AddScoped<IVoucherService, VoucherService>();
             builder.Services.AddScoped<IShopService, ShopService>();
+            builder.Services.AddScoped<IChatService, ChatService>();
 
             var app = builder.Build();
-
+            app.UseCors("AllowAll");
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
@@ -69,7 +81,7 @@ namespace DATN
 
             // Map Razor Pages first (Razor Pages prioritized in this workspace)
             app.MapRazorPages();
-
+            app.MapHub<ChatHub>("/chatHub");
             // Controller routes (including areas)
             app.MapControllerRoute(
                 name: "MyAreas",
