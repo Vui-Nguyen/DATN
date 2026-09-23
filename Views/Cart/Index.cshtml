@@ -74,10 +74,11 @@
                                                 <td><strong>@item.ProductName</strong></td>
                                                 <td>@item.Price.ToString("N0") đ</td>
                                                 <td>
-                                                    <div class="d-flex">
-                                                        <input type="number" class="form-control form-control-sm me-1 quantity-input"
-                                                               data-id="@item.CartItemID" value="@item.Quantity" min="1" readonly />
-                                                    </div>
+                                                    <input type="number" class="form-control form-control-sm quantity-input"
+                                                           style="width: 80px;"
+                                                           value="@item.Quantity"
+                                                           min="1"
+                                                           onchange="updateCartQuantity(this, '@item.CartItemID')" />
                                                 </td>
                                                 <td class="text-danger font-weight-bold item-total">@item.TotalPrice.ToString("N0") đ</td>
                                                 <td>
@@ -113,6 +114,43 @@
 
 @section Scripts {
     <script>
+        function updateCartQuantity(inputElement, cartItemId) {
+            const quantity = inputElement.value;
+
+            if (quantity < 1) {
+                alert('Số lượng phải lớn hơn 0');
+                location.reload(); // Load lại để reset về số lượng cũ
+                return;
+            }
+
+            // Tạo form POST gửi về Controller của bạn
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '/Cart/UpdateQuantity';
+
+            // Lấy và đính kèm AntiForgeryToken để không bị lỗi bảo mật [ValidateAntiForgeryToken]
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                form.appendChild(token.cloneNode(true));
+            }
+
+            // Thêm tham số cartItemId
+            const inputId = document.createElement('input');
+            inputId.type = 'hidden';
+            inputId.name = 'cartItemId';
+            inputId.value = cartItemId;
+            form.appendChild(inputId);
+
+            // Thêm tham số quantity
+            const inputQty = document.createElement('input');
+            inputQty.type = 'hidden';
+            inputQty.name = 'quantity';
+            inputQty.value = quantity;
+            form.appendChild(inputQty);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
         // Xử lý khi tick/bỏ tick checkbox của Shop
         function handleShopSelection(shopCb) {
             const shopId = shopCb.getAttribute('data-shop-id');

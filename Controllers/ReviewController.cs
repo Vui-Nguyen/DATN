@@ -30,7 +30,7 @@ namespace DATN.Controllers
             return View(result);
         }
         [HttpGet]
-        public async Task<IActionResult> Create(int variantId)
+        public async Task<IActionResult> Create(int variantId, int orderItemId)
         {
             int productId = await _productService.GetProductIdByVariantIdAsync(variantId);
 
@@ -43,6 +43,7 @@ namespace DATN.Controllers
             var model = new CreateReviewViewModel
             {
                 ProductId = productId, 
+                OrderItemId = orderItemId
             };
 
             return View(model);

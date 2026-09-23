@@ -54,12 +54,11 @@ namespace DATN.Services.Implementations
                     Description = "Cửa hàng mới đăng ký",
                     CreatedAt = DateTime.Now
                 };
-
                 _context.Shops.Add(shop);
                 await _context.SaveChangesAsync(); 
 
                 profile.ShopID = shop.ShopId;
-                _context.SellerProfiles.Update(profile);
+
                 await _context.SaveChangesAsync();
 
                 return new ServiceResult { Success = true, Message = $"Đã duyệt tài khoản {profile.User?.FullName} thành công!" };

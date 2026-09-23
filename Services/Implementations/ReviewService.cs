@@ -23,23 +23,26 @@ namespace DATN.Services.Implementations
                 .Where(o => o.UserId == userId && o.Status == "Delivered")
                 .SelectMany(o => o.OrderItems)
                 .Join(_context.ProductVariants,
-                      orderItem => orderItem.VariantId,
-                      variant => variant.VariantId,
-                      (orderItem, variant) => new { orderItem, variant })
+                    orderItem => orderItem.VariantId,
+                    variant => variant.VariantId,
+                    (orderItem, variant) => new { orderItem, variant })
                 .Join(_context.Products,
-                      x => x.variant.ProductId,
-                      product => product.ProductId,
-                      (x, product) => new
-                      {
-                          x.orderItem.VariantId,
-                          ProductName = $"{product.ProductName} - {x.variant.VariantName}",
-                          x.orderItem.Quantity,
-                          Price = x.orderItem.UnitPrice,
-                          ExistingReview = _context.Reviews
-                      .FirstOrDefault(r => r.UserId == userId && r.ProductId == x.variant.ProductId)
-                      })
+                    x => x.variant.ProductId,
+                    product => product.ProductId,
+                    (x, product) => new
+                    {
+                        x.orderItem.OrderItemId,
+                        x.orderItem.VariantId,
+                        ProductId = product.ProductId,
+                        ProductName = $"{product.ProductName} - {x.variant.VariantName}",
+                        x.orderItem.Quantity,
+                        Price = x.orderItem.UnitPrice,
+                        ExistingReview = _context.Reviews
+                            .FirstOrDefault(r => r.UserId == userId && r.OrderItemId == x.orderItem.OrderItemId)
+                    })
                 .Select(item => new OrderItemDto
                 {
+                    OrderItemId = item.OrderItemId, 
                     VariantID = item.VariantId,
                     ProductName = item.ProductName,
                     Quantity = item.Quantity,
@@ -93,6 +96,7 @@ namespace DATN.Services.Implementations
                 {
                     ProductId = model.ProductId,
                     UserId = model.UserId,
+                    OrderItemId = model.OrderItemId,
                     Rating = model.Rating,
                     Comment = model.Comment,
                     CreatedAt = DateTime.Now
@@ -108,7 +112,6 @@ namespace DATN.Services.Implementations
                 return new ServiceResult { Success = false, Message = "Lỗi khi lưu đánh giá: " + ex.Message };
             }
         }
-
         public async Task<ServiceResult> UpdateAsync(int id, EditReviewViewModel model)
         {
             try

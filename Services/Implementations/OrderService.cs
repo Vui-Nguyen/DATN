@@ -46,11 +46,11 @@ namespace DATN.Services.Implementations
 
         public async Task<OrderDetailDto?> GetDetailAsync(int id, int userId)
         {
-             var order = await _context.Orders
-                .Include(o => o.OrderItems)
-                .ThenInclude(i => i.Variant)
-                .ThenInclude(v => v.Product)
-                .FirstOrDefaultAsync(o => o.OrderId == id && o.UserId == userId); 
+            var order = await _context.Orders
+               .Include(o => o.OrderItems)
+               .ThenInclude(i => i.Variant)
+               .ThenInclude(v => v.Product)
+               .FirstOrDefaultAsync(o => o.OrderId == id && o.UserId == userId);
 
             if (order == null) return null;
 
@@ -186,7 +186,6 @@ namespace DATN.Services.Implementations
             model.SelectedVoucherId = voucher?.VoucherId;
             model.SelectedVoucherCode = voucher?.VoucherCode;
             model.DiscountAmount = discount;
-
             // 5. Tổng tiền
             model.ShippingFee = CalculateShippingFee(model.ItemsTotal);
             model.TotalAmount = Math.Max(0, model.ItemsTotal + model.ShippingFee - model.DiscountAmount);
@@ -254,7 +253,7 @@ namespace DATN.Services.Implementations
 
                 decimal totalAmount = Math.Max(0, itemsTotal + shippingFee - discount);
 
-                
+
                 // 5. Tạo đơn hàng
                 var order = new Order
                 {
@@ -284,13 +283,13 @@ namespace DATN.Services.Implementations
                 {
                     UserId = userId,
                     VoucherId = voucher?.VoucherId ?? 0,
-                    OrderId =order.OrderId,
+                    OrderId = order.OrderId,
                     UsedDate = DateTime.Now
                 };
                 if (voucher != null)
                 {
                     _context.VoucherUsages.Add(voucherUsage);
-                    voucher.Quantity -= 1; 
+                    voucher.Quantity -= 1;
                 }
                 await _context.SaveChangesAsync();
                 // 6. Chi tiết đơn + trừ kho
@@ -312,7 +311,6 @@ namespace DATN.Services.Implementations
                 string? paymentUrl = null;
                 if (model.PaymentMethod == "Banking")
                 {
-                    // Lấy HttpContext từ _httpContextAccessor đã tiêm trên đầu file
                     var context = _httpContextAccessor.HttpContext;
                     if (context != null)
                     {
@@ -346,7 +344,7 @@ namespace DATN.Services.Implementations
             // 1. Tìm đơn hàng kèm theo OrderItems và Payments để hoàn kho và cập nhật thanh toán
             var order = await _context.Orders
                 .Include(o => o.OrderItems)
-                .Include(o => o.Payments) // <--- Bổ sung Include bảng Payments
+                .Include(o => o.Payments)
                 .FirstOrDefaultAsync(o => o.OrderId == id && o.UserId == userId);
 
             if (order == null)
@@ -404,7 +402,7 @@ namespace DATN.Services.Implementations
                 .Where(s => s.UserId == userId)
                 .Select(s => s.ShopId)
                 .FirstOrDefaultAsync();
-            
+
             var query = _context.Orders
                     .Include(o => o.User)
                     .Include(o => o.OrderItems)
@@ -435,7 +433,7 @@ namespace DATN.Services.Implementations
         public async Task<OrderDetailSellerDto?> GetSellerDetailAsync(int id)
         {
             var order = await _context.Orders
-                .Include(o=> o.Payments)
+                .Include(o => o.Payments)
                 .Include(o => o.User)
                 .Include(o => o.OrderItems)
                 .ThenInclude(i => i.Variant)
@@ -453,7 +451,7 @@ namespace DATN.Services.Implementations
                 ShippingFee = order.ShippingFee,
                 DiscountAmount = order.DiscountAmount,
                 Note = order.Note,
-                PaymentMethod=order.Payments.FirstOrDefault()?.PaymentMethod ?? "COD",
+                PaymentMethod = order.Payments.FirstOrDefault()?.PaymentMethod ?? "COD",
                 Status = order.Status,
                 OrderItems = order.OrderItems.Select(i => new OrderItemDto
                 {
@@ -482,7 +480,7 @@ namespace DATN.Services.Implementations
                     var variant = await _context.ProductVariants.FindAsync(item.VariantId);
                     if (variant != null)
                     {
-                        variant.Stock += item.Quantity; 
+                        variant.Stock += item.Quantity;
                     }
                 }
             }

@@ -1,7 +1,8 @@
-﻿using DATN.Helpers;
+﻿using DATN.Data;
+using DATN.Helpers;
+using DATN.Models.Entities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using DATN.Data;
 
 namespace DATN.Controllers
 {
@@ -53,13 +54,17 @@ namespace DATN.Controllers
                 return View("PaymentFail");
             }
 
+            // Lấy đơn hàng kèm theo OrderItems và Payments để có thể hoàn kho khi thất bại
+            var order = await _context.Orders
+                .Include(o => o.OrderItems)
+                .Include(o => o.Payments)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
-            var order = await _context.Orders.Include(o => o.Payments).FirstOrDefaultAsync(o => o.OrderId == orderId);
             var payment = order?.Payments.FirstOrDefault();
 
             if (vnPay_ResponseCode == "00")
             {
-                if (order != null) order.Status = "Processing";
+                if (order != null) order.Status = "Pending";
                 if (payment != null)
                 {
                     payment.Status = "Success";
@@ -71,14 +76,42 @@ namespace DATN.Controllers
                 ViewBag.Message = $"Thanh toán thành công đơn hàng #{orderId}!";
                 return View("PaymentSuccess");
             }
-            else // Thanh toán thất bại hoặc khách bấm hủy
+            else // Thanh toán thất bại hoặc khách bấm hủy trên VNPAY
             {
-                if (order != null) order.Status = "PaymentFailed";
+                if (order != null)
+                {
+                    if (order.Status == "Pending")
+                    {
+                        order.Status = "CancelLed";
+
+                        // HOÀN LẠI TỒN KHO CHO CÁC SẢN PHẨM TRONG ĐƠN HÀNG
+                        foreach (var item in order.OrderItems)
+                        {
+                            var variant = await _context.ProductVariants.FindAsync(item.VariantId);
+                            if (variant != null)
+                            {
+                                variant.Stock += item.Quantity; // Cộng lại số lượng vào kho
+                            }
+                        }
+
+                        // Ghi lại lịch sử thay đổi trạng thái đơn hàng
+                        _context.OrderStatusHistories.Add(new OrderStatusHistory
+                        {
+                            OrderId = order.OrderId,
+                            Status = "Failed",
+                            UpdatedAt = DateTime.Now,
+                            Note = $"Thanh toán thất bại (Mã lỗi: {vnPay_ResponseCode})",
+                            ChangedBy = null // Hệ thống tự động cập nhật từ VNPAY
+                        });
+                    }
+                }
+
                 if (payment != null)
                 {
                     payment.Status = "Failed";
                     payment.GatewayResponse = $"Mã lỗi VNPay: {vnPay_ResponseCode}";
                 }
+
                 await _context.SaveChangesAsync();
 
                 ViewBag.Message = $"Thanh toán thất bại (Mã lỗi: {vnPay_ResponseCode}).";

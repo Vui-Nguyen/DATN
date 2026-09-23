@@ -397,8 +397,6 @@
 
             // Tham gia kênh cá nhân nhận thông báo
             connection.invoke("JoinPersonalChannel", currentUserId);
-
-            // Tham gia phòng chat hiện tại
             if (currentConversationId !== 0) {
                 connection.invoke("JoinConversation", currentConversationId);
 

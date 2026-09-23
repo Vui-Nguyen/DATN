@@ -81,8 +81,11 @@
                                     }
                                     else
                                     {
-                                        <a asp-controller="Review" asp-action="Create" asp-route-variantId="@item.VariantID" class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-star"></i> Viết đánh giá
+                                        <a asp-controller="Review" asp-action="Create"
+                                           asp-route-variantId="@item.VariantID"
+                                           asp-route-orderItemId="@item.OrderItemId"
+                                           class="btn btn-sm btn-primary">
+                                            Viết đánh giá
                                         </a>
                                     }
                                 </td>

@@ -26,7 +26,7 @@ namespace DATN.Models.DTOs
         public int Quantity { get; set; }
         public decimal Price { get; set; }
 
-
+        public int OrderItemId { get; set; }
         public bool HasReviewed { get; set; }
         public int? ReviewId { get; set; }
         public string? Reply { get; set; }

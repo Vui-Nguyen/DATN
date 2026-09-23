@@ -38,8 +38,18 @@ namespace DATN.Controllers
                 return RedirectToAction("Index", "Product");
             }
 
-            await _cartService.AddToCartAsync(GetUserId(), variantId, quantity);
-            TempData["Success"] = "Đã thêm sản phẩm vào giỏ hàng.";
+            // Nhận kết quả trả về từ Service
+            var result = await _cartService.AddToCartAsync(GetUserId(), variantId, quantity);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message; 
+            }
+            else
+            {
+                TempData["Error"] = result.Message;   
+            }
+
             return RedirectToAction(nameof(Index));
         }
 

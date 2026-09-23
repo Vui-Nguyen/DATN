@@ -50,30 +50,64 @@ namespace DATN.Services.Implementations
             };
         }
 
-        public async Task AddToCartAsync(int userId, int variantId, int quantity)
+        public async Task<ServiceResult> AddToCartAsync(int userId, int variantId, int quantity)
         {
-            var cart = await _context.Carts
-                .Include(c => c.CartItems)
-                .FirstOrDefaultAsync(c => c.UserId == userId);
+            // 1. Lấy thông tin tồn kho của variant
+            int stock = await _context.ProductVariants
+                .Where(v => v.VariantId == variantId)
+                .Select(v => v.Stock)
+                .FirstOrDefaultAsync();
 
+            // 2. Lấy giỏ hàng của user kèm theo các item bên trong
+            var cart = await _context.Carts
+                                 .Include(c => c.CartItems)
+                                 .FirstOrDefaultAsync(c => c.UserId == userId);
+
+            // 3. Kiểm tra xem sản phẩm này đã có trong giỏ hàng trước đó chưa
+            var existingItem = cart?.CartItems.FirstOrDefault(i => i.VariantId == variantId);
+            int currentQuantityInCart = existingItem?.Quantity ?? 0;
+
+            // 4. Kiểm tra xem tổng số lượng (trong giỏ + số lượng thêm) có vượt quá tồn kho không
+            if (currentQuantityInCart + quantity > stock)
+            {
+                return new ServiceResult
+                {
+                    Success = false,
+                    Message = $"Số lượng vượt quá tồn kho cho phép. (Kho chỉ còn: {stock})"
+                };
+            }
+
+            // 5. Nếu chưa có giỏ hàng thì tạo mới giỏ hàng
             if (cart == null)
             {
                 cart = new Cart { UserId = userId };
                 _context.Carts.Add(cart);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Lưu để sinh ra CartId
             }
 
-            var item = cart.CartItems.FirstOrDefault(i => i.VariantId == variantId);
-            if (item == null)
+            // 6. Thêm mới hoặc cập nhật số lượng trong giỏ
+            if (existingItem == null)
             {
-                _context.CartItems.Add(new CartItem { CartId = cart.CartId, VariantId = variantId, Quantity = quantity });
+                _context.CartItems.Add(new CartItem
+                {
+                    CartId = cart.CartId,
+                    VariantId = variantId,
+                    Quantity = quantity
+                });
             }
             else
             {
-                item.Quantity += quantity;
-                _context.CartItems.Update(item);
+                existingItem.Quantity += quantity;
+                _context.CartItems.Update(existingItem);
             }
+
             await _context.SaveChangesAsync();
+
+            return new ServiceResult
+            {
+                Success = true,
+                Message = "Thêm vào giỏ hàng thành công."
+            };
         }
 
         public async Task UpdateQuantityAsync(int userId, int cartItemId, int quantity)

@@ -13,6 +13,7 @@ public partial class Review
 
     public int? Rating { get; set; }
 
+    public int OrderItemId { get; set; }
     public string? Comment { get; set; }
 
     public DateTime? CreatedAt { get; set; }

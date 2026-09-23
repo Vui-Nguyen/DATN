@@ -251,6 +251,8 @@ namespace DATN.Services.Implementations
                         CreatedAt = DateTime.Now
                     };
                     _context.Shops.Add(newShop);
+                    await _context.SaveChangesAsync(); 
+
                 }
                 else
                 {
@@ -264,7 +266,7 @@ namespace DATN.Services.Implementations
                         product.IsDeleted = false; // hoặc 0
                     }
                 }
-
+                var Shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == id);
                 // 2. Kiểm tra và xử lý SellerProfile
                 var existingProfile = await _context.SellerProfiles.FirstOrDefaultAsync(p => p.UserId == id);
                 if (existingProfile == null)
@@ -279,7 +281,8 @@ namespace DATN.Services.Implementations
                         FrontIdentityImage = "Chưa cập nhật",
                         BackIdentityImage = "Chưa cập nhật",
                         Status = 1,
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.Now,
+                        ShopID = Shop.ShopId
                     };
                     _context.SellerProfiles.Add(newProfile);
                 }
