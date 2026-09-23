@@ -8,13 +8,8 @@ namespace DATN.Models.Entities
         [Key]
         public int Id { get; set; }
 
-<<<<<<< HEAD
-        public int? ShopID { get; set; } // Liên kết với bảng Shop
-        public Shop Shop { get; set; } // Liên kết với bảng Shop
-=======
         public int? ShopID { get; set; } 
         public Shop Shop { get; set; } 
->>>>>>> e771490 (Tam luu code dang lam)
         public int UserId { get; set; } // Liên kết với bảng User
 
         [Required, MaxLength(50)]
@@ -35,7 +30,6 @@ namespace DATN.Models.Entities
         [Required]
         public string BackIdentityImage { get; set; } // Đường dẫn mặt sau CCCD
 
-        // Trạng thái duyệt: 0 = Chờ duyệt, 1 = Đã duyệt, 2 = Bị từ chối
         public int Status { get; set; } = 0;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;

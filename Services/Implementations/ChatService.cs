@@ -34,8 +34,8 @@ namespace DATN.Services.Implementations
                 {
                     CustomerId = parsedCustomerId,
                     ShopId = shopId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
 
                 _context.Conversations.Add(conversation);
@@ -47,7 +47,7 @@ namespace DATN.Services.Implementations
 
         public async Task<List<ChatMessageDto>> GetMessagesAsync(int conversationId, int page, int pageSize)
         {
-            return await _context.ChatMessages
+            var messages = await _context.ChatMessages
                 .Where(m => m.ConversationId == conversationId)
                 // Sắp xếp giảm dần để lấy tin nhắn mới nhất, sau đó đảo ngược lại để hiển thị từ trên xuống dưới
                 .OrderByDescending(m => m.SentAt)
@@ -59,8 +59,10 @@ namespace DATN.Services.Implementations
                     SenderName = m.Sender.FullName,
                     MessageText = m.MessageText,
                     SentAt = m.SentAt
-                })
-                .ToListAsync();
+                }).ToListAsync();
+
+            messages.Reverse();
+            return messages;
         }
 
         public async Task<bool> SaveMessageAsync(int conversationId, string senderId, string text)
@@ -70,7 +72,7 @@ namespace DATN.Services.Implementations
                 ConversationId = conversationId,
                 SenderId = int.Parse(senderId),
                 MessageText = text,
-                SentAt = DateTime.UtcNow,
+                SentAt = DateTime.Now,
                 IsRead = false
             };
 
@@ -80,7 +82,7 @@ namespace DATN.Services.Implementations
             var conversation = await _context.Conversations.FindAsync(conversationId);
             if (conversation != null)
             {
-                conversation.UpdatedAt = DateTime.UtcNow;
+                conversation.UpdatedAt = DateTime.Now;
             }
 
             var result = await _context.SaveChangesAsync();

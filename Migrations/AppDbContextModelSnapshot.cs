@@ -58,7 +58,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Addresses");
+                    b.ToTable("Addresses", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Brand", b =>
@@ -75,19 +75,10 @@ namespace DATN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
                     b.HasKey("BrandId")
                         .HasName("PK__Brands__DAD4F3BE101E263A");
 
-                    b.ToTable("Brands");
+                    b.ToTable("Brands", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Cart", b =>
@@ -109,7 +100,7 @@ namespace DATN.Migrations
                     b.HasIndex(new[] { "UserId" }, "UQ__Carts__1788CCADE9F26DC6")
                         .IsUnique();
 
-                    b.ToTable("Carts");
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.CartItem", b =>
@@ -141,7 +132,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("VariantId");
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Category", b =>
@@ -158,19 +149,10 @@ namespace DATN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
                     b.HasKey("CategoryId")
                         .HasName("PK__Categori__19093A2BE4E2407A");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.ChatMessage", b =>
@@ -210,7 +192,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("ChatMessages");
+                    b.ToTable("ChatMessages", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Conversation", b =>
@@ -246,7 +228,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("ShopId");
 
-                    b.ToTable("Conversations");
+                    b.ToTable("Conversations", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Order", b =>
@@ -296,7 +278,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.OrderItem", b =>
@@ -329,7 +311,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("VariantId");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.OrderStatusHistory", b =>
@@ -409,7 +391,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("Payments");
+                    b.ToTable("Payments", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Product", b =>
@@ -449,10 +431,6 @@ namespace DATN.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ShopID");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("ProductId")
                         .HasName("PK__Products__B40CC6ED13A968AA");
 
@@ -462,7 +440,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("ShopId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.ProductImage", b =>
@@ -488,7 +466,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductImages");
+                    b.ToTable("ProductImages", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.ProductVariant", b =>
@@ -519,7 +497,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductVariants");
+                    b.ToTable("ProductVariants", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Review", b =>
@@ -564,7 +542,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Role", b =>
@@ -587,7 +565,7 @@ namespace DATN.Migrations
                     b.HasIndex(new[] { "RoleName" }, "UQ__Roles__8A2B61605580C6EC")
                         .IsUnique();
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.SellerProfile", b =>
@@ -645,7 +623,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SellerProfiles");
+                    b.ToTable("SellerProfiles", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Shop", b =>
@@ -686,7 +664,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Shops");
+                    b.ToTable("Shops", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.User", b =>
@@ -740,7 +718,7 @@ namespace DATN.Migrations
                     b.HasIndex(new[] { "Email" }, "UQ__Users__A9D105341C78E473")
                         .IsUnique();
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Voucher", b =>
@@ -784,7 +762,7 @@ namespace DATN.Migrations
                     b.HasIndex(new[] { "VoucherCode" }, "UQ__Vouchers__7F0ABCA9654CD323")
                         .IsUnique();
 
-                    b.ToTable("Vouchers");
+                    b.ToTable("Vouchers", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.VoucherUsage", b =>
@@ -822,7 +800,7 @@ namespace DATN.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("VoucherUsages");
+                    b.ToTable("VoucherUsages", (string)null);
                 });
 
             modelBuilder.Entity("DATN.Models.Entities.Address", b =>
