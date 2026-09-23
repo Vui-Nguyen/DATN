@@ -18,20 +18,18 @@ namespace DATN.Areas.Seller.Models.ViewModels
 
         [Required(ErrorMessage = "Vui lòng chọn danh mục cho sản phẩm.")]
         public int CategoryID { get; set; }
+        public string? NewCategoryName { get; set; }
 
         [Required(ErrorMessage = "Vui lòng chọn thương hiệu cho sản phẩm.")]
         public int BrandID { get; set; }
 
-        // 1. Danh sách đường dẫn ảnh cũ (dùng để hiển thị ảnh cũ ra màn hình Edit)
+        public string? NewBrandName { get; set; }
         public List<string> Images { get; set; } = new List<string>();
 
-        // 2. Danh sách ảnh cũ mà người dùng quyết định GIỮ LẠI sau khi submit form Edit
         public List<string> ExistingImages { get; set; } = new List<string>();
 
-        // 3. Danh sách file ảnh TẢI LÊN MỚI (Dùng cho cả Create và Edit)
         public List<IFormFile>? NewImages { get; set; } = new List<IFormFile>();
 
-        // 4. Danh sách các phân loại (Mỗi phân loại sẽ có giá và tồn kho riêng biệt)
         public List<ProductVariantViewModel> Variants { get; set; } = new List<ProductVariantViewModel>();
     }
 

@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Giỏ hàng của bạn";
-
+    Layout = "_Layout";
     // Nhóm các sản phẩm trong giỏ hàng theo ShopId / ShopName
     var groupedItems = Model?.Items?.GroupBy(i => new { i.ShopId, i.ShopName }) ?? Enumerable.Empty<IGrouping<object, DATN.Models.DTOs.CartItemDto>>();
 }

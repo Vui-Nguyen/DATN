@@ -8,37 +8,56 @@
 <div class="container mt-4" style="max-width: 900px;">
     <div class="card shadow-sm">
         <div class="card-header bg-success text-white">
-            <h4>Đăng ký thông tin sản phẩm mới</h4>
+            <h4 class="mb-0">Đăng ký thông tin sản phẩm mới</h4>
         </div>
         <div class="card-body">
             <form asp-area="Seller" asp-controller="Products" asp-action="Create" method="post" enctype="multipart/form-data">
                 <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                 <div class="mb-3">
-                    <label asp-for="ProductName" class="form-label">Tên sản phẩm</label>
+                    <label asp-for="ProductName" class="form-label fw-bold">Tên sản phẩm</label>
                     <input asp-for="ProductName" class="form-control" />
                     <span asp-validation-for="ProductName" class="text-danger"></span>
                 </div>
 
                 <div class="row">
+                    <!-- DANH MỤC SẢN PHẨM -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="CategoryID" class="form-label">Chọn danh mục sản phẩm</label>
-                        <select asp-for="CategoryID" class="form-select" asp-items="ViewBag.Categories">
+                        <label asp-for="CategoryID" class="form-label fw-bold">Chọn danh mục sản phẩm</label>
+                        <select asp-for="CategoryID" id="categorySelect" class="form-select" asp-items="ViewBag.Categories">
                             <option value="">-- Vui lòng chọn --</option>
+                            <option value="0" class="fw-bold text-success">+ Đề xuất danh mục mới...</option>
                         </select>
                         <span asp-validation-for="CategoryID" class="text-danger"></span>
+
+                        <!-- Ô input xuất hiện khi chọn Đề xuất danh mục -->
+                        <div id="newCategoryWrapper" class="mt-2" style="display: none;">
+                            <input asp-for="NewCategoryName" id="newCategoryInput" class="form-control border-success" placeholder="Nhập tên danh mục đề xuất..." />
+                            <small class="text-muted fst-italic">* Đề xuất này sẽ được gửi đến Admin phê duyệt.</small>
+                            <span asp-validation-for="NewCategoryName" class="text-danger d-block"></span>
+                        </div>
                     </div>
+
+                    <!-- THƯƠNG HIỆU PHÂN PHỐI -->
                     <div class="col-md-6 mb-3">
-                        <label asp-for="BrandID" class="form-label">Chọn thương hiệu phân phối</label>
-                        <select asp-for="BrandID" class="form-select" asp-items="ViewBag.Brands">
+                        <label asp-for="BrandID" class="form-label fw-bold">Chọn thương hiệu phân phối</label>
+                        <select asp-for="BrandID" id="brandSelect" class="form-select" asp-items="ViewBag.Brands">
                             <option value="">-- Vui lòng chọn --</option>
+                            <option value="0" class="fw-bold text-success">+ Đề xuất thương hiệu mới...</option>
                         </select>
                         <span asp-validation-for="BrandID" class="text-danger"></span>
+
+                        <!-- Ô input xuất hiện khi chọn Đề xuất thương hiệu -->
+                        <div id="newBrandWrapper" class="mt-2" style="display: none;">
+                            <input asp-for="NewBrandName" id="newBrandInput" class="form-control border-success" placeholder="Nhập tên thương hiệu đề xuất..." />
+                            <small class="text-muted fst-italic">* Đề xuất này sẽ được gửi đến Admin phê duyệt.</small>
+                            <span asp-validation-for="NewBrandName" class="text-danger d-block"></span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label asp-for="Description" class="form-label">Mô tả thông số chi tiết</label>
+                    <label asp-for="Description" class="form-label fw-bold">Mô tả thông số chi tiết</label>
                     <textarea asp-for="Description" class="form-control" rows="4"></textarea>
                 </div>
 
@@ -90,10 +109,49 @@
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
+        // XỬ LÝ ẨN/HIỆN INPUT ĐỀ XUẤT MỚI
+        const categorySelect = document.getElementById('categorySelect');
+        const newCategoryWrapper = document.getElementById('newCategoryWrapper');
+        const newCategoryInput = document.getElementById('newCategoryInput');
+
+        const brandSelect = document.getElementById('brandSelect');
+        const newBrandWrapper = document.getElementById('newBrandWrapper');
+        const newBrandInput = document.getElementById('newBrandInput');
+
+        function handleCategoryChange() {
+            if (categorySelect.value === '0') {
+                newCategoryWrapper.style.display = 'block';
+                newCategoryInput.setAttribute('required', 'required');
+            } else {
+                newCategoryWrapper.style.display = 'none';
+                newCategoryInput.removeAttribute('required');
+                newCategoryInput.value = '';
+            }
+        }
+
+        function handleBrandChange() {
+            if (brandSelect.value === '0') {
+                newBrandWrapper.style.display = 'block';
+                newBrandInput.setAttribute('required', 'required');
+            } else {
+                newBrandWrapper.style.display = 'none';
+                newBrandInput.removeAttribute('required');
+                newBrandInput.value = '';
+            }
+        }
+
+        categorySelect.addEventListener('change', handleCategoryChange);
+        brandSelect.addEventListener('change', handleBrandChange);
+
+        // Kích hoạt kiểm tra trạng thái ban đầu khi tải lại trang (nếu có validation fail)
+        handleCategoryChange();
+        handleBrandChange();
+
+        // XỬ LÝ DÒNG BIẾN THỂ (VARIANTS)
         let variantIndex = 1;
 
-        // Xử lý sự kiện bấm nút Thêm phân loại
         document.getElementById('add-variant-btn').addEventListener('click', function () {
             const container = document.getElementById('variants-container');
 
@@ -124,7 +182,6 @@
             updateRemoveButtons();
         });
 
-        // Xử lý sự kiện xóa phân loại
         document.getElementById('variants-container').addEventListener('click', function (e) {
             if (e.target && e.target.classList.contains('remove-variant-btn')) {
                 e.target.closest('.variant-item').remove();
@@ -133,7 +190,6 @@
             }
         });
 
-        // Cập nhật lại chỉ số Index (Variants[0], Variants[1]...) để ASP.NET Core Model Binding nhận diện đúng khi Submit
         function reindexVariants() {
             const items = document.querySelectorAll('.variant-item');
             variantIndex = items.length;
@@ -144,7 +200,6 @@
             });
         }
 
-        // Ẩn nút xóa nếu chỉ còn lại duy nhất 1 dòng phân loại
         function updateRemoveButtons() {
             const items = document.querySelectorAll('.variant-item');
             const removeButtons = document.querySelectorAll('.remove-variant-btn');

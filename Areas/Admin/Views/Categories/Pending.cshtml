@@ -1,0 +1,107 @@
+﻿@model DATN.Models.DTOs.PagedResult<DATN.Models.DTOs.CategoryDto>
+
+@{
+    ViewData["Title"] = "Duyệt danh mục đề xuất";
+        Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 text-gray-800 m-0">Danh sách danh mục chờ phê duyệt</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Về danh sách chính
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            @if (Model == null || !Model.Items.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <p class="mb-0">Hiện không có đề xuất danh mục nào đang chờ duyệt.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">ID</th>
+                                <th>Tên danh mục đề xuất</th>
+                                <th>Mã người gửi</th>
+                                <th>Thời gian gửi</th>
+                                <th style="width: 200px;" class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@item.CategoryID</td>
+                                    <td><strong class="text-primary">@item.CategoryName</strong></td>
+                                    <td><span class="badge bg-light text-dark border">@(item.CreatedByUserId ?? "Ẩn danh")</span></td>
+                                    <td>@(item.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "—")</td>
+                                    <td class="text-center">
+                                        <form asp-action="Approve" asp-route-id="@item.CategoryID" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success px-3 me-1"
+                                                    onclick="return confirm('Bạn có đồng ý phê duyệt danh mục này?');">
+                                                Duyệt
+                                            </button>
+                                        </form>
+                                        <form asp-action="Reject" asp-route-id="@item.CategoryID" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3"
+                                                    onclick="return confirm('Bạn có chắc muốn từ chối và xóa đề xuất này?');">
+                                                Từ chối
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                        <small class="text-muted">Tổng cộng: <strong>@Model.TotalItems</strong> bản ghi</small>
+                        <nav>
+                            <ul class="pagination pagination-sm m-0">
+                                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" asp-action="Pending" asp-route-page="@(Model.CurrentPage - 1)">Trước</a>
+                                </li>
+                                @for (int i = 1; i <= Model.TotalPages; i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" asp-action="Pending" asp-route-page="@i">@i</a>
+                                    </li>
+                                }
+                                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" asp-action="Pending" asp-route-page="@(Model.CurrentPage + 1)">Sau</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

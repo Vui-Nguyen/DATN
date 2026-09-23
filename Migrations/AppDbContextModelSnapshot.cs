@@ -75,6 +75,15 @@ namespace DATN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.HasKey("BrandId")
                         .HasName("PK__Brands__DAD4F3BE101E263A");
 
@@ -148,6 +157,15 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
 
                     b.HasKey("CategoryId")
                         .HasName("PK__Categori__19093A2BE4E2407A");
@@ -355,6 +373,10 @@ namespace DATN.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ShopID");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("ProductId")
                         .HasName("PK__Products__B40CC6ED13A968AA");
 
@@ -530,7 +552,7 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ShopID")
+                    b.Property<int?>("ShopID")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -542,7 +564,8 @@ namespace DATN.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ShopID")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ShopID] IS NOT NULL");
 
                     b.HasIndex("UserId");
 
@@ -898,9 +921,7 @@ namespace DATN.Migrations
                 {
                     b.HasOne("DATN.Models.Entities.Shop", "Shop")
                         .WithOne("SellerProfile")
-                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID");
 
                     b.HasOne("DATN.Models.Entities.User", "User")
                         .WithMany()

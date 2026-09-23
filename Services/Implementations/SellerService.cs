@@ -31,31 +31,42 @@ namespace DATN.Services.Implementations
                     return new ServiceResult { Success = false, Message = "Không tìm thấy hồ sơ người bán." };
                 }
 
-                profile.Status = 1;
+                // Kiểm tra xem user này đã có shop từ trước chưa để tránh lỗi
+                var existingShop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == profile.UserId);
+                if (existingShop != null)
+                {
+                    return new ServiceResult { Success = false, Message = "Người dùng này đã có cửa hàng rồi." };
+                }
 
+                profile.Status = 1;
 
                 if (profile.User != null)
                 {
-                    profile.User.RoleId = 2;
+                    profile.User.RoleId = 2; 
                 }
 
                 var shop = new Shop
                 {
                     IsLocked = false,
                     UserId = profile.UserId,
-                    ShopName = profile.User?.FullName,
+                    ShopName = profile.User?.FullName ?? "Cửa hàng mới",
+                    AvatarShop = "default.jpt",
                     Description = "Cửa hàng mới đăng ký",
                     CreatedAt = DateTime.Now
                 };
 
                 _context.Shops.Add(shop);
+                await _context.SaveChangesAsync(); 
+
+                profile.ShopID = shop.ShopId;
+                _context.SellerProfiles.Update(profile);
                 await _context.SaveChangesAsync();
 
                 return new ServiceResult { Success = true, Message = $"Đã duyệt tài khoản {profile.User?.FullName} thành công!" };
             }
             catch (Exception ex)
             {
-                return new ServiceResult { Success = false, Message = "Lỗi khi duyệt seller: " + ex.Message };
+                return new ServiceResult { Success = false, Message = "Lỗi khi duyệt seller: " + (ex.InnerException?.Message ?? ex.Message) };
             }
         }
         public async Task<ServiceResult> RegisterSellerAsync(int userId, RegisterSellerViewModel model)
@@ -125,9 +136,11 @@ namespace DATN.Services.Implementations
             }
             catch (Exception ex)
             {
-                return new ServiceResult { Success = false, Message = "Có lỗi xảy ra trong quá trình xử lý: " + ex.Message };
+                var innerMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return new ServiceResult { Success = false, Message = "Lỗi chi tiết: " + innerMessage };
             }
         }
+        
 
         private async Task<string> UploadImageAsync(IFormFile file)
         {

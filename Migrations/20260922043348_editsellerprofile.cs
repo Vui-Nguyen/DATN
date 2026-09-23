@@ -5,7 +5,7 @@
 namespace DATN.Migrations
 {
     /// <inheritdoc />
-    public partial class OrderTable : Migration
+    public partial class editsellerprofile : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

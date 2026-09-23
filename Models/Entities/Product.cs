@@ -20,6 +20,8 @@ public partial class Product
     public DateTime? CreatedAt { get; set; }
 
     public bool IsDeleted { get; set; } = false;
+
+    public string Status { get; set; } = "Active";
     public virtual Brand? Brand { get; set; }
 
     public virtual Category Category { get; set; } = null!;

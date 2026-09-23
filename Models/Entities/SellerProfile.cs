@@ -8,7 +8,7 @@ namespace DATN.Models.Entities
         [Key]
         public int Id { get; set; }
 
-        public int ShopID { get; set; } // Liên kết với bảng Shop
+        public int? ShopID { get; set; } // Liên kết với bảng Shop
         public Shop Shop { get; set; } // Liên kết với bảng Shop
         public int UserId { get; set; } // Liên kết với bảng User
 

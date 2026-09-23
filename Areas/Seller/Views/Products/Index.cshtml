@@ -28,6 +28,7 @@
                         <th>Tên mặt hàng sản phẩm</th>
                         <th>Giá thành</th>
                         <th>Ảnh</th>
+                        <th>Trạng thái phê duyệt</th>
                         <th class="text-center">Hành động</th>
                     </tr>
                 </thead>
@@ -53,6 +54,7 @@
                                     <img src="@prod.Images[0]" alt="@prod.ProductName" class="img-thumbnail" style="max-width: 100px;" />
                                 }
                             </td>
+                            <td>@prod.Status</td>
                             <td class="text-center">
                                 <a asp-area="Seller" asp-controller="Products" asp-action="Details" asp-route-id="@prod.ProductID" class="btn btn-sm btn-info text-white">Chi tiết</a>
                                 <a asp-area="Seller" asp-controller="Products" asp-action="Edit" asp-route-id="@prod.ProductID" class="btn btn-sm btn-info text-white">Sửa</a>

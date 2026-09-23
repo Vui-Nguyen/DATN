@@ -81,8 +81,6 @@ namespace DATN.Services.Implementations
         private static decimal CalculateShippingFee(decimal itemsTotal)
             => itemsTotal > 0 ? ShippingFeePerOrder : 0m;
 
-        // Tổng tiền hàng mà voucher được phép áp dụng:
-        // voucher của shop nào thì CHỈ giảm trên sản phẩm của shop đó.
         private static decimal GetEligibleTotal(Voucher voucher, List<CartItem> items)
         {
             var eligible = voucher.ShopId == null
@@ -437,6 +435,7 @@ namespace DATN.Services.Implementations
         public async Task<OrderDetailSellerDto?> GetSellerDetailAsync(int id)
         {
             var order = await _context.Orders
+                .Include(o=> o.Payments)
                 .Include(o => o.User)
                 .Include(o => o.OrderItems)
                 .ThenInclude(i => i.Variant)
@@ -454,6 +453,7 @@ namespace DATN.Services.Implementations
                 ShippingFee = order.ShippingFee,
                 DiscountAmount = order.DiscountAmount,
                 Note = order.Note,
+                PaymentMethod=order.Payments.FirstOrDefault()?.PaymentMethod ?? "COD",
                 Status = order.Status,
                 OrderItems = order.OrderItems.Select(i => new OrderItemDto
                 {

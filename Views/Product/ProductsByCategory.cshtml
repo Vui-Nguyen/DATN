@@ -2,6 +2,7 @@
 
 @{
     var category = ViewBag.Category as DATN.Models.DTOs.CategoryDto;
+    Layout = "_Layout";
     ViewData["Title"] = category != null ? "Danh mục: " + category.CategoryName : "Danh mục sản phẩm";
 }
 

@@ -4,6 +4,7 @@ using DATN.Data;
 using DATN.Models;
 using DATN.Models.DTOs;
 using DATN.Models.Entities;
+using DATN.Models.Enums;
 using DATN.Services;
 using DATN.Services.Interfaces;
 using Microsoft.AspNetCore.Hosting; 
@@ -39,11 +40,10 @@ namespace DATN.Services.Implementations
         public async Task<PagedResult<ProductDto>> GetAllAsync(int page, int pageSize)
         {
             var query = _context.Products
-                .Where(p => p.IsDeleted == false)
-                .Include(p => p.ProductImages)
-                .Include(p => p.ProductVariants) 
-                .AsQueryable();
-
+                 .Where(p => !p.IsDeleted && p.Status == ProductStatus.Active.ToString())
+                 .Include(p => p.ProductImages)
+                 .Include(p => p.ProductVariants)
+                 .AsQueryable();
             int totalItems = await query.CountAsync();
 
             var items = await query.Skip((page - 1) * pageSize).Take(pageSize)
@@ -52,7 +52,8 @@ namespace DATN.Services.Implementations
                     ProductID = p.ProductId,
                     ProductName = p.ProductName,
                     Price = p.ProductVariants.Min(v => (decimal?)v.Price) ?? 0,
-                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg"
+                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg",
+                    Status = p.Status
                 }).ToListAsync();
 
             return new PagedResult<ProductDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
@@ -60,7 +61,7 @@ namespace DATN.Services.Implementations
 
         public async Task<ProductDetailDto?> GetDetailAsync(int id)
         {
-            // Tối ưu: Include toàn bộ trong 1 query duy nhất
+   
             var product = await _context.Products
                 .Include(p => p.Category)
                 .Include(p => p.Brand)
@@ -68,7 +69,7 @@ namespace DATN.Services.Implementations
                 .Include(p => p.ProductImages)
                 .Include(p => p.ProductVariants)
                 .Include(p => p.Reviews)
-                .FirstOrDefaultAsync(p => p.ProductId == id);
+                .FirstOrDefaultAsync(p => p.ProductId == id && !p.IsDeleted);
 
             if (product == null) return null;
 
@@ -91,7 +92,7 @@ namespace DATN.Services.Implementations
                     VariantID = v.VariantId,
                     VariantName = v.VariantName,
                     Price = v.Price,
-                    Stock = v.Stock              // Thêm số lượng tồn kho của từng phân loại
+                    Stock = v.Stock            
                 }).ToList()
             };
         }
@@ -101,7 +102,7 @@ namespace DATN.Services.Implementations
             var query = _context.Products
                 .Include(p => p.ProductImages)
                 .Include(p => p.ProductVariants)
-                .Where(p => p.ProductName.Contains(keyword))
+                .Where(p => p.ProductName.Contains(keyword) && p.Status == ProductStatus.Active.ToString() && !p.IsDeleted)
                 .AsQueryable();
 
             int totalItems = await query.CountAsync();
@@ -112,7 +113,8 @@ namespace DATN.Services.Implementations
                     ProductID = p.ProductId,
                     ProductName = p.ProductName,
                     Price = p.ProductVariants.Min(v => (decimal?)v.Price) ?? 0,
-                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg"
+                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg",
+                    Status = p.Status
                 }).ToListAsync();
 
             return new PagedResult<ProductDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
@@ -121,7 +123,7 @@ namespace DATN.Services.Implementations
         public async Task<PagedResult<ProductDto>> GetByCategoryAsync(int categoryId, int page, int pageSize)
         {
             var query = _context.Products
-                .Where(p => p.IsDeleted == false)
+                .Where(p => !p.IsDeleted && p.Status == ProductStatus.Active.ToString())
                 .Include(p => p.ProductImages)
                 .Include(p => p.ProductVariants)
                 .Where(p => p.CategoryId == categoryId)
@@ -135,7 +137,8 @@ namespace DATN.Services.Implementations
                     ProductID = p.ProductId,
                     ProductName = p.ProductName,
                     Price = p.ProductVariants.Min(v => (decimal?)v.Price) ?? 0,
-                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg"
+                    ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg",
+                    Status = p.Status
                 }).ToListAsync();
 
             return new PagedResult<ProductDto> { Items = items, CurrentPage = page, TotalPages = (int)Math.Ceiling((double)totalItems / pageSize) };
@@ -147,7 +150,7 @@ namespace DATN.Services.Implementations
             int pageSize = 10;
 
             var query = _context.Products
-                .Where(p => p.IsDeleted == false && p.ShopId == shopId)
+                .Where(p => !p.IsDeleted && p.ShopId == shopId)
                 .Include(p => p.Category)
                 .Include(p => p.Brand)
                 .Include(p => p.Shop)
@@ -170,7 +173,8 @@ namespace DATN.Services.Implementations
                     ProductName = p.ProductName,
                     Price = p.ProductVariants.Min(v => (decimal?)v.Price) ?? 0,
                     ImageUrl = p.ProductImages.FirstOrDefault() != null ? p.ProductImages.FirstOrDefault().ImageUrl : "/images/default.jpg",
-                    Images = p.ProductImages.Select(img => img.ImageUrl).ToList()
+                    Images = p.ProductImages.Select(img => img.ImageUrl).ToList(),
+                    Status = p.Status
                 }).ToList(),
                 CurrentPage = page,
                 TotalPages = (int)Math.Ceiling((double)totalItems / pageSize)
@@ -293,76 +297,164 @@ namespace DATN.Services.Implementations
 
 
         public async Task<ServiceResult> CreateAsync(ProductViewModel model, List<IFormFile>? images)
-{
-    var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
-    if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
-    {
-        return new ServiceResult { Success = false, Message = "Không tìm thấy thông tin người dùng." };
-    }
-
-    using var transaction = await _context.Database.BeginTransactionAsync();
-    try
-    {
-        var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == currentUserId);
-        if (shop == null)
         {
-            return new ServiceResult { Success = false, Message = "Không tìm thấy cửa hàng của bạn." };
-        }
-
-        // Kiểm tra xem người dùng có nhập ít nhất 1 biến thể nào không
-        if (model.Variants == null || model.Variants.Count == 0)
-        {
-            return new ServiceResult { Success = false, Message = "Vui lòng nhập ít nhất một phân loại sản phẩm." };
-        }
-
-        // 1. Tạo thông tin cơ bản của sản phẩm
-        var product = new Product
-        {
-            ProductName = model.ProductName,
-            Description = model.Description,
-            CategoryId = model.CategoryID,
-            BrandId = model.BrandID == 0 ? null : model.BrandID,
-            ShopId = shop.ShopId,
-            CreatedAt = DateTime.Now
-        };
-
-        _context.Products.Add(product);
-
-        // 2. Tạo danh sách các biến thể từ Model gửi lên
-        foreach (var v in model.Variants)
-        {
-            var variant = new ProductVariant
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var currentUserId))
             {
-                Product = product, // Liên kết với sản phẩm vừa tạo
-                VariantName = string.IsNullOrWhiteSpace(v.VariantName) ? "Mặc định" : v.VariantName,
-                Price = v.Price,
-                Stock = v.Stock
-            };
-            _context.ProductVariants.Add(variant);
+                return new ServiceResult { Success = false, Message = "Không tìm thấy thông tin người dùng." };
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var shop = await _context.Shops.FirstOrDefaultAsync(s => s.UserId == currentUserId);
+                if (shop == null)
+                {
+                    return new ServiceResult { Success = false, Message = "Không tìm thấy cửa hàng của bạn." };
+                }
+
+                if (model.Variants == null || model.Variants.Count == 0)
+                {
+                    return new ServiceResult { Success = false, Message = "Vui lòng nhập ít nhất một phân loại sản phẩm." };
+                }
+
+                // Biến cờ kiểm tra xem người bán có đề xuất mới cần Admin phê duyệt hay không
+                bool hasNewProposal = false;
+
+                // 1. XỬ LÝ ĐỀ XUẤT DANH MỤC MỚI
+                int finalCategoryId = model.CategoryID;
+                if (model.CategoryID == 0)
+                {
+                    if (string.IsNullOrWhiteSpace(model.NewCategoryName))
+                    {
+                        return new ServiceResult { Success = false, Message = "Vui lòng nhập tên danh mục đề xuất." };
+                    }
+
+                    var categoryName = model.NewCategoryName.Trim();
+
+                    var existingCategory = await _context.Categories
+                        .FirstOrDefaultAsync(c => c.CategoryName.ToLower() == categoryName.ToLower());
+
+                    if (existingCategory != null)
+                    {
+                        finalCategoryId = existingCategory.CategoryId;
+                        // Nếu danh mục có sẵn nhưng chưa được duyệt thì sản phẩm vẫn phải chờ duyệt
+                        if (!existingCategory.IsApproved)
+                        {
+                            hasNewProposal = true;
+                        }
+                    }
+                    else
+                    {
+                        var newCategory = new Category
+                        {
+                            CategoryName = categoryName,
+                            IsApproved = false,
+                            CreatedByUserId = currentUserId.ToString(),
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        _context.Categories.Add(newCategory);
+                        await _context.SaveChangesAsync();
+
+                        finalCategoryId = newCategory.CategoryId;
+                        hasNewProposal = true; // Đánh dấu cần duyệt
+                    }
+                }
+
+                // 2. XỬ LÝ ĐỀ XUẤT THƯƠNG HIỆU MỚI
+                int? finalBrandId = model.BrandID;
+                if (model.BrandID == 0)
+                {
+                    if (!string.IsNullOrWhiteSpace(model.NewBrandName))
+                    {
+                        var brandName = model.NewBrandName.Trim();
+
+                        var existingBrand = await _context.Brands
+                            .FirstOrDefaultAsync(b => b.BrandName.ToLower() == brandName.ToLower());
+
+                        if (existingBrand != null)
+                        {
+                            finalBrandId = existingBrand.BrandId;
+                            if (!existingBrand.IsApproved)
+                            {
+                                hasNewProposal = true;
+                            }
+                        }
+                        else
+                        {
+                            var newBrand = new Brand
+                            {
+                                BrandName = brandName,
+                                IsApproved = false,
+                                CreatedByUserId = currentUserId.ToString(),
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            _context.Brands.Add(newBrand);
+                            await _context.SaveChangesAsync();
+
+                            finalBrandId = newBrand.BrandId;
+                            hasNewProposal = true; // Đánh dấu cần duyệt
+                        }
+                    }
+                    else
+                    {
+                        finalBrandId = null;
+                    }
+                }
+
+                // 3. TẠO SẢN PHẨM VỚI TRẠNG THÁI PHÙ HỢP
+                var product = new Product
+                {
+                    ProductName = model.ProductName,
+                    Description = model.Description,
+                    CategoryId = finalCategoryId,
+                    BrandId = finalBrandId,
+                    ShopId = shop.ShopId,
+                    CreatedAt = DateTime.Now,
+                    Status = (hasNewProposal ? ProductStatus.PendingApproval : ProductStatus.Active).ToString()
+                };
+
+                _context.Products.Add(product);
+
+                // 4. TẠO DANH SÁCH BIẾN THỂ
+                foreach (var v in model.Variants)
+                {
+                    var variant = new ProductVariant
+                    {
+                        Product = product,
+                        VariantName = string.IsNullOrWhiteSpace(v.VariantName) ? "Mặc định" : v.VariantName,
+                        Price = v.Price,
+                        Stock = v.Stock
+                    };
+                    _context.ProductVariants.Add(variant);
+                }
+
+                await _context.SaveChangesAsync();
+
+                // 5. LƯU BỘ SƯU TẬP ẢNH
+                if (images != null && images.Count > 0)
+                {
+                    await SaveProductImagesAsync(product.ProductId, images);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+
+                string returnMessage = hasNewProposal
+                    ? "Sản phẩm đã được tạo và đang chờ Admin duyệt danh mục/thương hiệu mới."
+                    : "Tạo sản phẩm thành công.";
+
+                return new ServiceResult { Success = true, Message = returnMessage };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                var errorMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return new ServiceResult { Success = false, Message = "Lỗi khi tạo sản phẩm: " + errorMsg };
+            }
         }
-
-        await _context.SaveChangesAsync();
-
-        // 3. Xử lý lưu ảnh nếu có
-        if (images != null && images.Count > 0)
-        {
-            await SaveProductImagesAsync(product.ProductId, images);
-            await _context.SaveChangesAsync();
-        }
-
-        // Xác nhận Transaction khi tất cả các bước đều thành công
-        await transaction.CommitAsync();
-
-        return new ServiceResult { Success = true };
-    }
-    catch (Exception ex)
-    {
-        await transaction.RollbackAsync();
-        var errorMsg = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-        return new ServiceResult { Success = false, Message = "Lỗi khi tạo sản phẩm: " + errorMsg };
-    }
-}
-        
 
         public async Task<ServiceResult> DeleteAsync(int id)
         {

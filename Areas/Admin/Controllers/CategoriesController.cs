@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using DATN.Services.Interfaces;
+﻿using System.Security.Claims;
 using DATN.Areas.Admin.Models.ViewModels;
+using DATN.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DATN.Areas.Admin.Controllers
 {
@@ -16,11 +17,54 @@ namespace DATN.Areas.Admin.Controllers
             _categoryService = categoryService;
         }
 
-        // GET: /Admin/Categories/Index
-        public async Task<IActionResult> Index()
+        // GET: /Admin/Categories/Index (Danh sách danh mục đã duyệt, có phân trang)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
-            var categories = await _categoryService.GetAllAsync();
-            return View(categories);
+            var pagedCategories = await _categoryService.GetAllPagedAsync(page, pageSize);
+            return View(pagedCategories);
+        }
+
+        // GET: /Admin/Categories/Pending (Danh sách đề xuất chờ Admin duyệt)
+        public async Task<IActionResult> Pending(int page = 1, int pageSize = 10)
+        {
+            var pendingCategories = await _categoryService.GetPendingApprovalPagedAsync(page, pageSize);
+            return View(pendingCategories);
+        }
+
+        // POST: /Admin/Categories/Approve/5 (Admin duyệt đề xuất)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id)
+        {
+            var result = await _categoryService.ApproveAsync(id);
+            if (!result.Success)
+            {
+                TempData["Error"] = result.Message;
+            }
+            else
+            {
+                TempData["Success"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Pending));
+        }
+
+ 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(int id)
+        {
+            var result = await _categoryService.RejectAsync(id);
+            if (!result.Success)
+            {
+                TempData["Error"] = result.Message;
+            }
+            else
+            {
+                TempData["Success"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Pending));
         }
 
         // GET: /Admin/Categories/Create
@@ -37,8 +81,17 @@ namespace DATN.Areas.Admin.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            await _categoryService.CreateAsync(model);
-            TempData["Success"] = "Tạo danh mục thành công.";
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            // Admin tạo trực tiếp nên isApproved = true
+            var result = await _categoryService.CreateAsync(model, createdByUserId: currentUserId, isApproved: true);
+
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                return View(model);
+            }
+
+            TempData["Success"] = result.Message;
             return RedirectToAction(nameof(Index));
         }
 
@@ -62,11 +115,11 @@ namespace DATN.Areas.Admin.Controllers
             var result = await _categoryService.UpdateAsync(id, model);
             if (!result.Success)
             {
-                ModelState.AddModelError("", result.Message);
+                ModelState.AddModelError(string.Empty, result.Message);
                 return View(model);
             }
 
-            TempData["Success"] = "Cập nhật danh mục thành công.";
+            TempData["Success"] = result.Message;
             return RedirectToAction(nameof(Index));
         }
 
@@ -79,7 +132,7 @@ namespace DATN.Areas.Admin.Controllers
             if (!result.Success)
                 TempData["Error"] = result.Message;
             else
-                TempData["Success"] = "Đã xóa danh mục.";
+                TempData["Success"] = result.Message;
 
             return RedirectToAction(nameof(Index));
         }

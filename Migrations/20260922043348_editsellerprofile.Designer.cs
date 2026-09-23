@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DATN.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260920051545_AddAvatarAttributeForSHopTable")]
-    partial class AddAvatarAttributeForSHopTable
+    [Migration("20260922043348_editsellerprofile")]
+    partial class editsellerprofile
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -77,6 +77,15 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
 
                     b.HasKey("BrandId")
                         .HasName("PK__Brands__DAD4F3BE101E263A");
@@ -152,6 +161,15 @@ namespace DATN.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.HasKey("CategoryId")
                         .HasName("PK__Categori__19093A2BE4E2407A");
 
@@ -181,9 +199,6 @@ namespace DATN.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime")
                         .HasDefaultValueSql("(getdate())");
-
-                    b.Property<string>("PaymentMethod")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("ShippingFee")
                         .HasColumnType("decimal(18,2)");
@@ -361,6 +376,10 @@ namespace DATN.Migrations
                         .HasColumnType("int")
                         .HasColumnName("ShopID");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("ProductId")
                         .HasName("PK__Products__B40CC6ED13A968AA");
 
@@ -455,6 +474,12 @@ namespace DATN.Migrations
                     b.Property<int?>("Rating")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("RepliedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reply")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int")
                         .HasColumnName("UserID");
@@ -530,7 +555,7 @@ namespace DATN.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ShopID")
+                    b.Property<int?>("ShopID")
                         .HasColumnType("int");
 
                     b.Property<int>("Status")
@@ -542,7 +567,8 @@ namespace DATN.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ShopID")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[ShopID] IS NOT NULL");
 
                     b.HasIndex("UserId");
 
@@ -898,9 +924,7 @@ namespace DATN.Migrations
                 {
                     b.HasOne("DATN.Models.Entities.Shop", "Shop")
                         .WithOne("SellerProfile")
-                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("DATN.Models.Entities.SellerProfile", "ShopID");
 
                     b.HasOne("DATN.Models.Entities.User", "User")
                         .WithMany()
